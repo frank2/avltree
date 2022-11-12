@@ -1,6 +1,8 @@
 #include <framework.hpp>
 #include <avltree.hpp>
 
+#include <string>
+
 using namespace avltree;
 
 int test_avltree() {
@@ -17,6 +19,37 @@ int test_avltree() {
    COMPLETE();
 }
 
+int test_avlmap() {
+   INIT();
+
+   AVLMap<std::string, std::uint32_t> map;
+   ASSERT(map.size() == 0);
+   
+   map["abad1dea"] = 0xabad1dea;
+   map["deadbeef"] = 0xdeadbeef;
+   map["facebabe"] = 0xfacebabe;
+   map["defaced1"] = 0xdefaced1;
+   
+   ASSERT(map.size() == 4);
+   ASSERT(map["abad1dea"] == 0xabad1dea);
+   ASSERT_THROWS(map.get("badkey") == 0, exception::KeyNotFound);
+
+   map["abad1dea"] = 0;
+   ASSERT(map["abad1dea"] == 0);
+   ASSERT(map.size() == 4);
+
+   ASSERT_SUCCESS(map.remove("abad1dea"));
+   ASSERT(map.size() == 3);
+   ASSERT_THROWS(map.get("abad1dea") == 0, exception::KeyNotFound);
+
+   for (auto iter=map.begin(); iter!=map.end(); ++iter)
+      iter->second = 0;
+
+   ASSERT(map.has_key("deadbeef") && map["deadbeef"] == 0);
+   
+   COMPLETE();
+}
+
 int
 main
 (int argc, char *argv[])
@@ -25,6 +58,9 @@ main
 
    LOG_INFO("Testing AVLTree.");
    PROCESS_RESULT(test_avltree);
+
+   LOG_INFO("Testing AVLMap.");
+   PROCESS_RESULT(test_avlmap);
       
    COMPLETE();
 }
