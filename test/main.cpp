@@ -12,7 +12,7 @@ int test_avltree() {
    auto tree = AVLTree<std::uint32_t>(nodes);
 
    std::vector<std::uint32_t> inorder_expected = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-   std::vector<std::uint32_t> inorder_result(tree.begin_inorder(), tree.end_inorder());
+   std::vector<std::uint32_t> inorder_result(tree.begin(), tree.end());;
 
    ASSERT(inorder_result == inorder_expected);
 
@@ -43,7 +43,7 @@ int test_avlmap() {
    ASSERT_THROWS(map.get("abad1dea") == 0, exception::KeyNotFound);
 
    for (auto iter=map.begin(); iter!=map.end(); ++iter)
-      iter->second = 0;
+      *iter->second = 0;
 
    ASSERT(map.has_key("deadbeef") && map["deadbeef"] == 0);
    
