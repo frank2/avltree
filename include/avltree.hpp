@@ -84,8 +84,11 @@ namespace avltree
    public:
       inline const Key &key() const { return this->_key; }
       inline int height() const { return this->_height; }
+      inline SharedNode parent() { return this->_parent; }
       inline ConstSharedNode parent() const { return this->_parent; }
+      inline SharedNode left() { return this->_left; }
       inline ConstSharedNode left() const { return this->_left; }
+      inline SharedNode right() { return this->_right; }
       inline ConstSharedNode right() const { return this->_right; }
 
       inline bool is_leaf() const { return this->_left == nullptr && this->_right == nullptr; }
