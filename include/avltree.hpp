@@ -13,148 +13,116 @@
 
 namespace avltree
 {
-   namespace exception {
-      class Exception : public std::exception
-      {
-      public:
-         std::string error;
-
-         Exception() : std::exception() {}
-         Exception(std::string error) : error(error), std::exception() {}
-
-         const char *what() const noexcept {
-            return this->error.c_str();
-         }
-      };
-
-      class NullPointer : public Exception {
-      public:
-         NullPointer() : Exception("Encountered an unexpected null pointer.") {}
-      };
-
-      class NodeKeysMatch : public Exception {
-      public:
-         NodeKeysMatch() : Exception("Node keys unexpectedly matched.") {}
-      };
-
-      class KeyExists : public Exception {
-      public:
-         KeyExists() : Exception("The key already exists in the tree.") {}
-      };
-
-      class EmptyTree : public Exception {
-      public:
-         EmptyTree() : Exception("The tree is empty.") {}
-      };
-
-      class NodeNotFound : public Exception {
-      public:
-         NodeNotFound() : Exception("The node was not found.") {}
-      };
-
-      class KeyNotFound : public Exception {
-      public:
-         KeyNotFound() : Exception("The key was not found in the tree.") {}
-      };
-   }
-
-   template <typename Key, typename Node, typename Allocator>
-   class AVLTree;
-
-   template <typename Key, typename Compare=std::less<Key>>
-   class AVLNode
+namespace exception {
+   class Exception : public std::exception
    {
-      template <typename _Key, typename _Node, typename Allocator>
-      friend class AVLTree;
-
    public:
-      using KeyType = typename Key;
-      using CompareType = typename Compare;
-      using SharedNode = std::shared_ptr<AVLNode<Key, Compare>>;
-      using ConstSharedNode = std::shared_ptr<const AVLNode<Key, Compare>>;
+      std::string error;
 
-   protected:
-      Key _key;
-      int _height;
-      SharedNode _parent, _left, _right;
+      Exception() : std::exception() {}
+      Exception(std::string error) : error(error), std::exception() {}
 
-      AVLNode () : _key(Key()), _parent(nullptr), _left(nullptr), _right(nullptr), _height(0) {}
-      AVLNode(const AVLNode &other) : _key(other._key), _parent(other._parent), _left(other._left), _right(other._right), _height(other._height) {}
-
-   public:
-      inline const Key &key() const { return this->_key; }
-      inline int height() const { return this->_height; }
-      inline SharedNode parent() { return this->_parent; }
-      inline ConstSharedNode parent() const { return this->_parent; }
-      inline SharedNode left() { return this->_left; }
-      inline ConstSharedNode left() const { return this->_left; }
-      inline SharedNode right() { return this->_right; }
-      inline ConstSharedNode right() const { return this->_right; }
-
-      inline bool is_leaf() const { return this->_left == nullptr && this->_right == nullptr; }
-
-      int compare(const Key &key) const {
-         auto ab = Compare()(key, this->_key);
-         auto ba = Compare()(this->_key, key);
-
-         if (!ab && !ba) { return 0; }
-         if (ab && !ba) { return -1; }
-         else { return 1; }
-      }
-
-      int compare(ConstSharedNode &node) const {
-         if (node == nullptr) { throw exception::NullPointer(); }
-
-         return this->compare(node->key());
-      }
-
-      int balance() const {
-         auto left_height = (this->_left != nullptr) ? this->_left->height() : 0;
-         auto right_height = (this->_right != nullptr) ? this->_right->height() : 0;
-
-         return right_height - left_height;
-      }
-                        
-      int new_height() const {
-         auto left_height = (this->_left != nullptr) ? this->_left->height() : 0;
-         auto right_height = (this->_right != nullptr) ? this->_right->height() : 0;
-
-         return std::max(left_height,right_height)+1;
+      const char *what() const noexcept {
+         return this->error.c_str();
       }
    };
-   
-   template <typename Key, typename Node=AVLNode<Key>, typename Allocator=std::allocator<Node>>
-   class AVLTree
-   {
-      template <class T, class R = void>  
-      struct enable_if_type { typedef R type; };
 
-      template <class T, class Enable = void>
-      struct has_compare_type : std::false_type {};
-
-      template <class T>
-      struct has_compare_type<T, typename enable_if_type<typename T::CompareType>::type> : std::true_type {};
-      
-      static_assert(has_compare_type<Node>::value && std::is_base_of<AVLNode<Key, typename Node::CompareType>, Node>::value,
-                    "Template argument Node must derive AVLNode as a base with the given Key argument.");
-      static_assert(std::is_same<Node, Allocator::value_type>::value,
-                    "Allocator must allocate Node objects.");
-      
+   class NullPointer : public Exception {
    public:
+      NullPointer() : Exception("Encountered an unexpected null pointer.") {}
+   };
+
+   class NodeKeysMatch : public Exception {
+   public:
+      NodeKeysMatch() : Exception("Node keys unexpectedly matched.") {}
+   };
+
+   class KeyExists : public Exception {
+   public:
+      KeyExists() : Exception("The key already exists in the tree.") {}
+   };
+
+   class EmptyTree : public Exception {
+   public:
+      EmptyTree() : Exception("The tree is empty.") {}
+   };
+
+   class NodeNotFound : public Exception {
+   public:
+      NodeNotFound() : Exception("The node was not found.") {}
+   };
+
+   class KeyNotFound : public Exception {
+   public:
+      KeyNotFound() : Exception("The key was not found in the tree.") {}
+   };
+}
+   
+   template <typename Key, typename Value, typename KeyOfValue, typename KeyCompare>
+   class AVLTreeBase
+   {
+   public:
+      class Node;
+      
       using KeyType = typename Key;
-      using NodeType = typename Node;
-      using BaseType = AVLNode<Key, typename Node::CompareType>;
+      using ValueType = typename Value;
       using SharedNode = std::shared_ptr<Node>;
       using ConstSharedNode = std::shared_ptr<const Node>;
-      using BaseNode = std::shared_ptr<BaseType>;
-      using ConstBaseNode = std::shared_ptr<const BaseType>;
-      
-   private:
-      struct AllocatorDeleter {
-         Allocator allocator;
-         AllocatorDeleter(Allocator &allocator) : allocator(allocator) {}
-         void operator()(Node *ptr) {
-            allocator.deallocate(ptr, 1);
+
+      class Node
+      {
+      protected:
+         Value _value;
+         int _height;
+         SharedNode _parent, _left, _right;
+         
+      public:
+         friend class AVLTreeBase;
+
+         Node () : _value(Value()), _parent(nullptr), _left(nullptr), _right(nullptr), _height(0) {}
+         Node(const Value &value) : _value(value), _parent(nullptr), _left(nullptr), _right(nullptr), _height(0) {}
+         Node(const Node &other) : _value(other._value), _parent(other._parent), _left(other._left), _right(other._right), _height(other._height) {}
+                  
+         inline const Key &key() const { return KeyOfValue()(this->value()); }
+         inline Value &value() { return this->_value; }
+         inline const Value &value() const { return this->_value; }
+         inline int height() const { return this->_height; }
+         inline SharedNode parent() { return this->_parent; }
+         inline ConstSharedNode parent() const { return this->_parent; }
+         inline SharedNode left() { return this->_left; }
+         inline ConstSharedNode left() const { return this->_left; }
+         inline SharedNode right() { return this->_right; }
+         inline ConstSharedNode right() const { return this->_right; }
+
+         inline bool is_leaf() const { return this->_left == nullptr && this->_right == nullptr; }
+
+         int compare(const Key &key) const {
+            auto ab = KeyCompare()(key, this->key());
+            auto ba = KeyCompare()(this->key(), key);
+
+            if (!ab && !ba) { return 0; }
+            if (ab && !ba) { return -1; }
+            else { return 1; }
+         }
+
+         int compare(ConstSharedNode &node) const {
+            if (node == nullptr) { throw exception::NullPointer(); }
+
+            return this->compare(node->key());
+         }
+
+         int balance() const {
+            auto left_height = (this->_left != nullptr) ? this->_left->height() : 0;
+            auto right_height = (this->_right != nullptr) ? this->_right->height() : 0;
+            
+            return right_height - left_height;
+         }
+                        
+         int new_height() const {
+            auto left_height = (this->_left != nullptr) ? this->_left->height() : 0;
+            auto right_height = (this->_right != nullptr) ? this->_right->height() : 0;
+
+            return std::max(left_height,right_height)+1;
          }
       };
 
@@ -162,13 +130,13 @@ namespace avltree
       template <typename NodeType>
       class inorder_iterator_base
       {
-         static_assert(std::is_same<NodeType, typename SharedNode>::value || std::is_same<NodeType, typename ConstSharedNode>::value,
+         static_assert(std::is_same<NodeType, SharedNode>::value || std::is_same<NodeType, ConstSharedNode>::value,
                        "Iterator template type must be a SharedNode or a ConstSharedNode.");
          
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = typename SharedNode;
+         using value_type = SharedNode;
          using pointer = value_type *;
          using reference = value_type &;
 
@@ -222,13 +190,13 @@ namespace avltree
       template <typename NodeType>
       class preorder_iterator_base
       {
-         static_assert(std::is_same<NodeType, typename SharedNode>::value || std::is_same<NodeType, typename ConstSharedNode>::value,
+         static_assert(std::is_same<NodeType, SharedNode>::value || std::is_same<NodeType, ConstSharedNode>::value,
                        "Iterator template type must be a SharedNode or a ConstSharedNode.");
          
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = typename SharedNode;
+         using value_type = SharedNode;
          using pointer = value_type *;
          using reference = value_type &;
 
@@ -267,13 +235,13 @@ namespace avltree
       template <typename NodeType>
       class postorder_iterator_base
       {
-         static_assert(std::is_same<NodeType, typename SharedNode>::value || std::is_same<NodeType, typename ConstSharedNode>::value,
+         static_assert(std::is_same<NodeType, SharedNode>::value || std::is_same<NodeType, ConstSharedNode>::value,
                        "Iterator template type must be a SharedNode or a ConstSharedNode.");
          
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = typename SharedNode;
+         using value_type = SharedNode;
          using pointer = value_type *;
          using reference = value_type &;
 
@@ -320,11 +288,10 @@ namespace avltree
          NodeType node;
       };
 
-      Allocator allocator;
-      typename SharedNode root;
+      SharedNode _root;
       std::size_t _size;
 
-      void set_right_child(typename BaseNode &target, typename BaseNode &child) {
+      void set_right_child(SharedNode &target, SharedNode &child) {
          if (target == nullptr) { throw exception::NullPointer(); }
          
          target->_right = child;
@@ -333,7 +300,7 @@ namespace avltree
             child->_parent = target;
       }
 
-      void set_left_child(typename BaseNode &target, typename BaseNode &child) {
+      void set_left_child(SharedNode &target, SharedNode &child) {
          if (target == nullptr) { throw exception::NullPointer(); }
 
          target->_left = child;
@@ -342,7 +309,7 @@ namespace avltree
             child->_parent = target;
       }
 
-      void set_parent(typename BaseNode &target, typename BaseNode &parent) {
+      void set_parent(SharedNode &target, SharedNode &parent) {
          if (target == nullptr) { throw exception::NullPointer(); }
 
          if (parent == nullptr) { 
@@ -357,7 +324,7 @@ namespace avltree
          else { parent->_right = target; }
       }
 
-      void rotate_left(typename BaseNode &rotation_root) {
+      void rotate_left(SharedNode &rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
          auto pivot_root = rotation_root->_right;
@@ -365,7 +332,7 @@ namespace avltree
          auto rotation_parent = rotation_root->_parent;
 
          if (rotation_parent == nullptr)
-            this->root = std::static_pointer_cast<Node>(pivot_root);
+            this->_root = pivot_root;
          else if (rotation_parent->_left == rotation_root)
             rotation_parent->_left = pivot_root;
          else if (rotation_parent->_right == rotation_root)
@@ -384,7 +351,7 @@ namespace avltree
          pivot_root->_height = pivot_root->new_height();
       }
 
-      void rotate_right(typename BaseNode &rotation_root) {
+      void rotate_right(SharedNode &rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
          auto pivot_root = rotation_root->_left;
@@ -392,7 +359,7 @@ namespace avltree
          auto rotation_parent = rotation_root->_parent;
 
          if (rotation_parent == nullptr)
-            this->root = std::static_pointer_cast<Node>(pivot_root);
+            this->_root = pivot_root;
          else if (rotation_parent->_left == rotation_root)
             rotation_parent->_left = pivot_root;
          else if (rotation_parent->_right == rotation_root)
@@ -411,7 +378,7 @@ namespace avltree
          pivot_root->_height = pivot_root->new_height();
       }
 
-      void rebalance_node(typename BaseNode &node) {
+      void rebalance_node(SharedNode &node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          auto balance = node->balance();
@@ -446,10 +413,10 @@ namespace avltree
          }
       }
 
-      void update_height(BaseNode &node) {
+      void update_height(SharedNode &node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
-         BaseNode update = node;
+         SharedNode update = node;
 
          while (update != nullptr)
          {
@@ -471,49 +438,50 @@ namespace avltree
          }
       }
 
-      typename SharedNode allocate_node(const Key &key) {
-         auto node = new (this->allocator.allocate(1)) Node();
-         node->_key = key;
+      SharedNode allocate_node(const Value &value) {
+         auto node = std::make_shared<Node>(value);
 
-         return SharedNode(node, AllocatorDeleter(this->allocator));
+         return node;
       }
 
-      typename SharedNode copy_node(ConstSharedNode node) {
-         auto node = new (this->allocator.allocate(1)) Node(*node);
+      SharedNode copy_node(ConstSharedNode node) {
+         auto node = std::make_shared<Node>(*node);
 
-         return SharedNode(node, AllocatorDeleter(this->allocator));
+         return node;
       }
          
-      typename SharedNode add_node(const Key &key) {
-         if (this->root == nullptr)
+      SharedNode add_node(const Value &value) {
+         if (this->_root == nullptr)
          {
-            this->root = this->allocate_node(key);
+            this->_root = this->allocate_node(value);
             ++this->_size;
-            return this->root;
+            return this->_root;
          }
 
+         auto key = KeyOfValue()(value);
          auto traversal = this->search(key);
          auto last_result = *traversal.rbegin();
-         auto parent = std::dynamic_pointer_cast<BaseType>(last_result.first);
+         auto parent = last_result.first;
          auto branch = last_result.second;
          
          if (branch == 0) { throw exception::KeyExists(); }
 
-         auto new_node = this->allocate_node(key);
+         auto new_node = this->allocate_node(value);
 
-         if (branch < 0) { this->set_left_child(parent, std::dynamic_pointer_cast<BaseType>(new_node)); }
-         else { this->set_right_child(parent, std::dynamic_pointer_cast<BaseType>(new_node)); }
+         if (branch < 0) { this->set_left_child(parent, new_node); }
+         else { this->set_right_child(parent, new_node); }
 
-         this->update_height(std::dynamic_pointer_cast<BaseType>(new_node));
+         this->update_height(new_node);
 
          ++this->_size;
 
          return new_node;
       }
 
-      void remove_node(const Key &key) {
+      void remove_node(const Value &value) {
          if (this->is_empty()) { throw exception::EmptyTree(); }
 
+         auto key = KeyOfValue()(value);
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
 
@@ -531,9 +499,9 @@ namespace avltree
                   node->_parent->_right.reset();
             }
 
-            if (node == this->root)
+            if (node == this->_root)
             {
-               this->root.reset();
+               this->_root.reset();
             }
             else
             {
@@ -545,7 +513,7 @@ namespace avltree
          }
          else if (node->_left == nullptr || node->_right == nullptr)
          {
-            BaseNode replacement_node;
+            SharedNode replacement_node;
 
             if (node->_left == nullptr)
                replacement_node = node->_right;
@@ -554,10 +522,10 @@ namespace avltree
 
             replacement_node->_parent = node->_parent;
 
-            if (node == this->root)
+            if (node == this->_root)
             {
-               this->root = std::static_pointer_cast<Node>(replacement_node);
-               this->update_height(std::dynamic_pointer_cast<BaseType>(this->root));
+               this->_root = replacement_node;
+               this->update_height(this->_root);
             }
             else if (node->_parent->_left == node)
             {
@@ -609,8 +577,8 @@ namespace avltree
                   leftmost->_parent->_right = leftmost;
             }
 
-            if (node == this->root)
-               this->root = std::static_pointer_cast<Node>(leftmost);
+            if (node == this->_root)
+               this->_root = std::static_pointer_cast<Node>(leftmost);
 
             if (replaced_node != nullptr)
                this->update_height(replaced_node);
@@ -628,16 +596,16 @@ namespace avltree
       }
 
    public:
-      class inorder_iterator : public inorder_iterator_base<typename SharedNode>
+      class inorder_iterator : public inorder_iterator_base<SharedNode>
       {
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = typename SharedNode;
+         using value_type = SharedNode;
          using pointer = value_type *;
          using reference = value_type &;
 
-         inorder_iterator(typename SharedNode node) : inorder_iterator_base(node) {}
+         inorder_iterator(SharedNode node) : inorder_iterator_base(node) {}
          
          reference operator*() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
@@ -661,63 +629,7 @@ namespace avltree
          }
       };
 
-      class const_inorder_iterator : public inorder_iterator_base<typename ConstSharedNode>
-      {
-      public:
-         using iterator_category = std::forward_iterator_tag;
-         using difference_type = std::ptrdiff_t;
-         using value_type = typename ConstSharedNode;
-         using pointer = value_type *;
-         using reference = value_type &;
-
-         const_inorder_iterator(typename ConstSharedNode node) : inorder_iterator_base(node) {}
-
-         reference operator*() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return this->node;
-         }
-         pointer operator->() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return &this->node;
-         }
-      };
-
-      class preorder_iterator : public preorder_iterator_base<typename SharedNode>
-      {
-      public:
-         using iterator_category = std::forward_iterator_tag;
-         using difference_type = std::ptrdiff_t;
-         using value_type = typename SharedNode;
-         using pointer = value_type *;
-         using reference = value_type &;
-
-         preorder_iterator(typename SharedNode node) : preorder_iterator_base(node) {}
-         
-         reference operator*() {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return this->node;
-         }
-         const reference operator*() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return this->node;
-         }
-         pointer operator->() {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return &this->node;
-         }
-         const pointer operator->() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return &this->node;
-         }
-      };
-
-      class const_preorder_iterator : public preorder_iterator_base<typename ConstSharedNode>
+      class const_inorder_iterator : public inorder_iterator_base<ConstSharedNode>
       {
       public:
          using iterator_category = std::forward_iterator_tag;
@@ -726,7 +638,7 @@ namespace avltree
          using pointer = value_type *;
          using reference = value_type &;
 
-         const_preorder_iterator(typename ConstSharedNode node) : preorder_iterator_base(node) {}
+         const_inorder_iterator(ConstSharedNode node) : inorder_iterator_base(node) {}
 
          reference operator*() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
@@ -740,16 +652,16 @@ namespace avltree
          }
       };
 
-      class postorder_iterator : public postorder_iterator_base<typename SharedNode>
+      class preorder_iterator : public preorder_iterator_base<SharedNode>
       {
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = typename SharedNode;
+         using value_type = SharedNode;
          using pointer = value_type *;
          using reference = value_type &;
 
-         postorder_iterator(typename SharedNode node) : postorder_iterator_base(node) {}
+         preorder_iterator(SharedNode node) : preorder_iterator_base(node) {}
          
          reference operator*() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
@@ -773,16 +685,72 @@ namespace avltree
          }
       };
 
-      class const_postorder_iterator : public postorder_iterator_base<typename ConstSharedNode>
+      class const_preorder_iterator : public preorder_iterator_base<ConstSharedNode>
       {
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = typename ConstSharedNode;
+         using value_type = ConstSharedNode;
          using pointer = value_type *;
          using reference = value_type &;
 
-         const_postorder_iterator(typename ConstSharedNode node) : postorder_iterator_base(node) {}
+         const_preorder_iterator(ConstSharedNode node) : preorder_iterator_base(node) {}
+
+         reference operator*() const {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return this->node;
+         }
+         pointer operator->() const {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return &this->node;
+         }
+      };
+
+      class postorder_iterator : public postorder_iterator_base<SharedNode>
+      {
+      public:
+         using iterator_category = std::forward_iterator_tag;
+         using difference_type = std::ptrdiff_t;
+         using value_type = SharedNode;
+         using pointer = value_type *;
+         using reference = value_type &;
+
+         postorder_iterator(SharedNode node) : postorder_iterator_base(node) {}
+         
+         reference operator*() {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return this->node;
+         }
+         const reference operator*() const {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return this->node;
+         }
+         pointer operator->() {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return &this->node;
+         }
+         const pointer operator->() const {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return &this->node;
+         }
+      };
+
+      class const_postorder_iterator : public postorder_iterator_base<ConstSharedNode>
+      {
+      public:
+         using iterator_category = std::forward_iterator_tag;
+         using difference_type = std::ptrdiff_t;
+         using value_type = ConstSharedNode;
+         using pointer = value_type *;
+         using reference = value_type &;
+
+         const_postorder_iterator(ConstSharedNode node) : postorder_iterator_base(node) {}
 
          reference operator*() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
@@ -797,79 +765,141 @@ namespace avltree
       };
 
       template <typename iterator_base>
-      class key_iterator : public iterator_base
+      class value_iterator : public iterator_base
       {
-         static_assert(std::is_same<iterator_base, const_inorder_iterator>::value ||
-                       std::is_same<iterator_base, const_preorder_iterator>::value ||
-                       std::is_same<iterator_base, const_postorder_iterator>::value,
-                       "Key iterator base must be an const_inorder_iterator, a const_preorder_iterator or a const_postorder_iterator.");
+         static_assert(std::is_same<iterator_base, inorder_iterator>::value ||
+                       std::is_same<iterator_base, preorder_iterator>::value ||
+                       std::is_same<iterator_base, postorder_iterator>::value,
+                       "Value iterator base must be an inorder_iterator, a preorder_iterator or a postorder_iterator.");
 
       public:
          using iterator_category = std::forward_iterator_tag;
          using difference_type = std::ptrdiff_t;
-         using value_type = const Key;
+         using value_type = Value;
          using pointer = value_type *;
          using reference = value_type &;
 
-         key_iterator(typename ConstSharedNode node) : iterator_base(node) {}
+         value_iterator(SharedNode node) : iterator_base(node) {}
+
+         reference operator*() {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return this->node->value();
+         }
+
+         const reference operator*() const {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return this->node->value();
+         }
+
+         pointer operator->() {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return &this->node->value();
+         }
+
+         const pointer operator->() const {
+            if (this->node == nullptr) { throw exception::NullPointer(); }
+
+            return &this->node->value();
+         }
+      };
+      
+      template <typename iterator_base>
+      class const_value_iterator : public iterator_base
+      {
+         static_assert(std::is_same<iterator_base, const_inorder_iterator>::value ||
+                       std::is_same<iterator_base, const_preorder_iterator>::value ||
+                       std::is_same<iterator_base, const_postorder_iterator>::value,
+                       "Value iterator base must be a const_inorder_iterator, a const_preorder_iterator or a const_postorder_iterator.");
+
+      public:
+         using iterator_category = std::forward_iterator_tag;
+         using difference_type = std::ptrdiff_t;
+         using value_type = const Value;
+         using pointer = value_type *;
+         using reference = value_type &;
+
+         const_value_iterator(ConstSharedNode node) : iterator_base(node) {}
 
          reference operator*() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
-            return this->node->key();
+            return this->node->value();
          }
 
          pointer operator->() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
-            return &this->node->key();
+            return &this->node->value();
          }
       };
 
-      using iterator = key_iterator<const_inorder_iterator>;
+      using iterator = value_iterator<postorder_iterator>;
+      using const_iterator = value_iterator<const_postorder_iterator>;
 
-      AVLTree() : _size(0) {}
-      AVLTree(std::vector<Key> &nodes) : _size(0) {
+      AVLTreeBase() : _size(0) {}
+      AVLTreeBase(std::vector<Value> &nodes) : _size(0) {
          for (auto node : nodes)
             this->add_node(node);
       }
-      AVLTree(const AVLTree &other) {
+      AVLTreeBase(const AVLTreeBase &other) {
          this->copy(other);
       }
-      ~AVLTree() {
+      virtual ~AVLTreeBase() {
          this->destroy();
       }
 
-      inorder_iterator begin_inorder() { return inorder_iterator(this->root); }
+      inorder_iterator begin_inorder() { return inorder_iterator(this->_root); }
       inorder_iterator end_inorder() { return inorder_iterator(nullptr); }
-      const_inorder_iterator cbegin_inorder() const { return const_inorder_iterator(this->root); }
+      const_inorder_iterator cbegin_inorder() const { return const_inorder_iterator(this->_root); }
       const_inorder_iterator cend_inorder() const { return const_inorder_iterator(nullptr); }
 
-      preorder_iterator begin_preorder() { return preorder_iterator(this->root); }
+      preorder_iterator begin_preorder() { return preorder_iterator(this->_root); }
       preorder_iterator end_preorder() { return preorder_iterator(nullptr); }
-      const_preorder_iterator cbegin_preorder() const { return const_preorder_iterator(this->root); }
+      const_preorder_iterator cbegin_preorder() const { return const_preorder_iterator(this->_root); }
       const_preorder_iterator cend_preorder() const { return const_preorder_iterator(nullptr); }
 
-      postorder_iterator begin_postorder() { return postorder_iterator(this->root); }
+      postorder_iterator begin_postorder() { return postorder_iterator(this->_root); }
       postorder_iterator end_postorder() { return postorder_iterator(nullptr); }
-      const_postorder_iterator cbegin_postorder() const { return const_postorder_iterator(this->root); }
+      const_postorder_iterator cbegin_postorder() const { return const_postorder_iterator(this->_root); }
       const_postorder_iterator cend_postorder() const { return const_postorder_iterator(nullptr); }
 
-      iterator begin() const { return iterator(this->root); }
-      iterator end() const { return iterator(nullptr); }
+      value_iterator<inorder_iterator> begin_values_inorder() { return value_iterator<inorder_iterator>(this->_root); }
+      value_iterator<inorder_iterator> end_values_inorder() { return value_iterator<inorder_iterator>(nullptr); }
+      const_value_iterator<const_inorder_iterator> cbegin_values_inorder() { return const_value_iterator<const_inorder_iterator>(this->_root); }
+      const_value_iterator<const_inorder_iterator> cend_values_inorder() { return const_value_iterator<const_inorder_iterator>(nullptr); }
 
-      inline bool is_empty() const { return this->root == nullptr; }
+      value_iterator<preorder_iterator> begin_values_preorder() { return value_iterator<preorder_iterator>(this->_root); }
+      value_iterator<preorder_iterator> end_values_preorder() { return value_iterator<preorder_iterator>(nullptr); }
+      const_value_iterator<const_preorder_iterator> cbegin_values_preorder() { return const_value_iterator<const_preorder_iterator>(this->_root); }
+      const_value_iterator<const_preorder_iterator> cend_values_preorder() { return const_value_iterator<const_preorder_iterator>(nullptr); }
+
+      value_iterator<postorder_iterator> begin_values_postorder() { return value_iterator<postorder_iterator>(this->_root); }
+      value_iterator<postorder_iterator> end_values_postorder() { return value_iterator<postorder_iterator>(nullptr); }
+      const_value_iterator<const_postorder_iterator> cbegin_values_postorder() { return const_value_iterator<const_postorder_iterator>(this->_root); }
+      const_value_iterator<const_postorder_iterator> cend_values_postorder() { return const_value_iterator<const_postorder_iterator>(nullptr); }
+
+      iterator begin() { return iterator(this->_root); }
+      iterator end() { return iterator(nullptr); }
+      const_iterator cbegin() const { return const_iterator(this->_root); }
+      const_iterator cend() const { return const_iterator(nullptr); }
+
+      inline bool is_empty() const { return this->_root == nullptr; }
+      inline SharedNode root() { return this->_root; }
+      inline ConstSharedNode root() const { return this->_root; }
       bool contains(const Key &key) const {
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
 
          return last_node.second == 0;
       }
-      std::vector<std::pair<typename ConstSharedNode, int>> search(const Key &key) const {
-         auto result = std::vector<std::pair<typename ConstSharedNode, int>>();
-         if (this->root == nullptr) { return result; }
+      std::vector<std::pair<ConstSharedNode, int>> search(const Key &key) const {
+         auto result = std::vector<std::pair<ConstSharedNode, int>>();
+         if (this->_root == nullptr) { return result; }
          
-         typename ConstSharedNode node = std::dynamic_pointer_cast<const Node>(this->root);
+         ConstSharedNode node = this->_root;
          auto branch = node->compare(key);
          
          while (branch != 0 && node != nullptr)
@@ -877,9 +907,9 @@ namespace avltree
             result.push_back(std::make_pair(node, branch));
 
             if (branch < 0)
-               node = std::static_pointer_cast<const Node>(node->left());
+               node = node->left();
             else
-               node = std::static_pointer_cast<const Node>(node->right());
+               node = node->right();
 
             if (node != nullptr)
                branch = node->compare(key);
@@ -889,11 +919,11 @@ namespace avltree
 
          return result;
       }
-      std::vector<std::pair<typename SharedNode, int>> search(const Key &key) {
-         auto result = std::vector<std::pair<typename SharedNode, int>>();
-         if (this->root == nullptr) { return result; }
+      std::vector<std::pair<SharedNode, int>> search(const Key &key) {
+         auto result = std::vector<std::pair<SharedNode, int>>();
+         if (this->_root == nullptr) { return result; }
          
-         auto node = std::dynamic_pointer_cast<Node>(this->root);
+         auto node = this->_root;
          auto branch = node->compare(key);
          
          while (branch != 0 && node != nullptr)
@@ -901,9 +931,9 @@ namespace avltree
             result.push_back(std::make_pair(node, branch));
 
             if (branch < 0)
-               node = std::static_pointer_cast<Node>(node->_left);
+               node = node->_left;
             else
-               node = std::static_pointer_cast<Node>(node->_right);
+               node = node->_right;
 
             if (node != nullptr)
                branch = node->compare(key);
@@ -913,8 +943,8 @@ namespace avltree
 
          return result;
       }
-      std::optional<typename SharedNode> find(const Key &key) {
-         if (this->root == nullptr) { return std::nullopt; }
+      std::optional<SharedNode> find(const Key &key) {
+         if (this->_root == nullptr) { return std::nullopt; }
          
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
@@ -922,8 +952,8 @@ namespace avltree
          if (last_node.second == 0) { return last_node.first; }
          else { return std::nullopt; }
       }
-      std::optional<typename ConstSharedNode> find(const Key &key) const {
-         if (this->root == nullptr) { return std::nullopt; }
+      std::optional<ConstSharedNode> find(const Key &key) const {
+         if (this->_root == nullptr) { return std::nullopt; }
          
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
@@ -943,24 +973,28 @@ namespace avltree
          if (result == std::nullopt) { throw exception::KeyNotFound(); }
          return *result;
       }
-      SharedNode insert(const Key &key) {
-         return this->add_node(key);
+      SharedNode insert(const Value &value) {
+         return this->add_node(value);
       }
       void remove(const Key &key) {
-         this->remove_node(key);
+         auto traversal = this->search(key);
+         auto last_node = *traversal.rbegin();
+         if (last_node.second != 0) { throw exception::KeyNotFound(); }
+         
+         this->remove_node(last_node.first->value());
       }
-      std::vector<typename SharedNode> to_vec() {
-         return std::vector<typename SharedNode>(this->begin_postorder(), this->end_postorder());
+      std::vector<Value> to_vec() {
+         return std::vector<Value>(this->begin(), this->end());
       }
-      std::vector<typename ConstSharedNode> to_vec() const {
-         return std::vector<typename ConstSharedNode>(this->cbegin_postorder(), this->cend_postorder());
+      std::vector<const Value> to_vec() const {
+         return std::vector<const Value>(this->cbegin(), this->cend());
       }
       inline std::size_t size() const {
          return this->_size;
       }
       void destroy() {
-         if (this->root == nullptr) { return; }
-         std::vector<typename BaseNode> visiting = { this->root };
+         if (this->_root == nullptr) { return; }
+         std::vector<SharedNode> visiting = { this->_root };
 
          while (visiting.size() > 0)
          {
@@ -975,19 +1009,19 @@ namespace avltree
             node->_right.reset();
          }
 
-         this->root.reset();
+         this->_root.reset();
       }
-      void copy(const AVLTree &other) {
-         if (this->root != nullptr)
+      void copy(const AVLTreeBase &other) {
+         if (this->_root != nullptr)
             this->destroy();
          
          if (other.root == nullptr) { return; }
 
-         std::vector<typename ConstSharedNode> visiting = { other.root };
-         std::vector<typename SharedNode> added = { this->copy_node(other.root) }
+         std::vector<ConstSharedNode> visiting = { other.root };
+         std::vector<SharedNode> added = { this->copy_node(other.root) }
          std::size_t parent_index = 0;
 
-         this->root = added.front();
+         this->_root = added.front();
 
          while (visiting.size() > 0)
          {
@@ -1005,192 +1039,78 @@ namespace avltree
                auto left = this->copy_node(node->_left);
                this->set_left_child(new_node, left);
                added.push_back(left);
-               visiting.push_back(std::dynamic_pointer_cast<const Node>(node->_left));
+               visiting.push_back(node->_left);
             }
             
             if (node->_right != nullptr) {
                auto right = this->copy_node(node->_right);
                this->set_right_child(new_node, right);
                added.push_back(right);
-               visiting.push_back(std::dynamic_pointer_cast<const Node>(node->_right));
+               visiting.push_back(node->_right);
             }
          }
       }
    };
 
-   template<typename Key, typename Value, typename Compare=std::less<Key>>
-   class AVLMapNode : public AVLNode<Key, Compare>
-   {
-      template <typename _Key, typename _Node, typename Allocator>
-      friend class AVLTree;
-
-      template <typename _Key, typename _Value, typename _Node, typename Allocator>
-      friend class AVLMap;
-      
-   protected:
-      Value _value;
-            
-      AVLMapNode() : AVLNode() {}
-      AVLMapNode(const AVLMapNode &other) : _value(other._value), AVLNode(other) {}
-      
-   public:
-      using ValueType = typename Value;
-      
-      Value &value() { return this->_value; }
-      const Value &value() const { return this->_value; }
+   template <typename Value>
+   struct KeyIsValue {
+      const Value &operator() (const Value &value) const { return value; }
    };
 
-   template <typename Key, typename Value, typename Node=AVLMapNode<Key, Value>, typename Allocator=std::allocator<Node>>
-   class AVLMap : public AVLTree<Key, Node, Allocator>
+   template <typename Key, typename KeyCompare=std::less<Key>>
+   class AVLTree : public AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>
    {
-      template <class T, class R = void>  
-      struct enable_if_type { typedef R type; };
-
-      template <class T, class Enable = void>
-      struct has_value_type : std::false_type {};
-
-      template <class T>
-      struct has_value_type<T, typename enable_if_type<typename T::ValueType>::type> : std::true_type {};
-      
-      static_assert(has_value_type<Node>::value,
-                    "Node class must derive AVLMapNode.");
-      
-      typename AVLTree::SharedNode add_node(const Key &key, const Value &value) {
-         auto node = AVLTree::add_node(key);
-         node->_value = value;
-
-         return node;
-      }
-      
    public:
-      class iterator : public AVLTree::postorder_iterator
-      {
-      public:
-         using iterator_category = std::forward_iterator_tag;
-         using difference_type = std::ptrdiff_t;
-         using value_type = std::pair<const Key *, Value *>;
-         using pointer = value_type *;
-         using reference = value_type &;
+      using iterator = typename AVLTreeBase::const_iterator;
 
-         iterator(typename AVLTree::SharedNode node) : AVLTree::postorder_iterator(node) {
-            if (this->node == nullptr) { this->entry = std::make_pair<const Key *, Value *>(nullptr, nullptr); }
-            else {
-               auto node = postorder_iterator::operator*();
-               this->entry = std::make_pair(&node->key(), &node->value());
-            }
-         }
+      AVLTree() : AVLTreeBase() {}
+      AVLTree(std::vector<Key> &nodes) : AVLTreeBase(nodes) {}
+      AVLTree(const AVLTree &other) : AVLTreeBase(other) {}
 
-         reference operator*() {
-            return this->entry;
-         }
+      iterator begin() const { return iterator(this->root()); }
+      iterator end() const { return iterator(nullptr); }
+      iterator cbegin() const { return this->begin(); }
+      iterator cend() const { return this->end(); }
+   };
 
-         const reference operator*() const {
-            return this->entry;
-         }
+   template<typename Key, typename Value>
+   struct KeyOfPair {
+      const Key &operator() (const std::pair<const Key, Value> &pair) const { return pair.first; }
+   };
 
-         pointer operator->() {
-            return &this->entry;
-         }
-
-         const pointer operator->() const {
-            return &this->entry;
-         }
-
-         iterator& operator++() {
-            postorder_iterator::operator++();
-
-            if (this->node == nullptr) { this->entry = std::make_pair<const Key *, Value *>(nullptr, nullptr); }
-            else {
-               auto node = postorder_iterator::operator*();
-               this->entry = std::make_pair(&node->key(), &node->value());
-            }
-
-            return *this;
-         }
-         iterator& operator++(int) { auto tmp = *this; ++(*this); return tmp; }
-
-      protected:
-         value_type entry;
-      };
-
-      class const_iterator : public AVLTree::const_postorder_iterator
-      {
-      public:
-         using iterator_category = std::forward_iterator_tag;
-         using difference_type = std::ptrdiff_t;
-         using value_type = std::pair<const Key *, const Value *>;
-         using pointer = value_type *;
-         using reference = value_type &;
-
-         const_iterator(typename AVLTree::ConstSharedNode node) : AVLTree::const_postorder_iterator(node) {
-            if (this->node == nullptr) { this->entry = std::make_pair<const Key *, const Value *>(nullptr, nullptr); }
-            else {
-               auto node = const_postorder_iterator::operator*();
-               this->entry = std::make_pair<const Key *, const Value *>(&node->key(), &node->value());
-            }
-         }
-
-         const reference operator*() const {
-            return this->entry;
-         }
-
-         const pointer operator->() const {
-            return &this->entry;
-         }
-
-         const_iterator& operator++() {
-            const_postorder_iterator::operator++();
-                        
-            if (this->node == nullptr) { this->entry = std::make_pair<const Key *, const Value *>(nullptr, nullptr); }
-            else {
-               auto node = const_postorder_iterator::operator*();
-               this->entry = std::make_pair<const Key *, const Value *>(&node->key(), &node->value());
-            }
-
-            return *this;
-         }
-         const_iterator& operator++(int) { auto tmp = *this; ++(*this); return tmp; }
-
-      protected:
-         value_type entry;
-      };
-
-      AVLMap() : AVLTree() {}
-      AVLMap(std::vector<typename AVLTree::KeyType> &nodes) : AVLTree(nodes) {}
-      AVLMap(const AVLMap &other) : AVLTree(other) {}
+   template <typename Key, typename Value, typename KeyCompare=std::less<Key>>
+   class AVLMap : public AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>
+   {
+   public:
+      AVLMap() : AVLTreeBase() {}
+      AVLMap(std::vector<typename AVLTreeBase::ValueType> &nodes) : AVLTreeBase(nodes) {}
+      AVLMap(const AVLMap &other) : AVLTreeBase(other) {}
 
       Value &operator[](const Key &key) {
          try {
             return this->get(key);
          }
          catch (exception::KeyNotFound &) {
-            auto node = this->add_node(key, Value());
-            return this->get(key);
+            auto node = this->add_node(std::make_pair(key, Value()));
+            return node->value().second;
          }
       }
       const Value &operator[](const Key &key) const { return this->get(key); }
-
-      iterator begin() { return iterator(this->root); }
-      iterator end() { return iterator(nullptr); }
-      const_iterator cbegin() { return const_iterator(this->root); }
-      const_iterator cend() { return const_iterator(nullptr); }
       
       bool has_key(const Key &key) const {
          return this->contains(key);
       }
 
       void insert(const Key &key, const Value &value) {
-         this->add_node(key, value);
+         AVLTreeBase::insert(std::make_pair(key, value));
       }
 
       Value &get(const Key &key) {
-         auto node = AVLTree::get(key);
-         return node->value();
+         return AVLTreeBase::get(key)->value().second;
       }
 
       const Value &get(const Key &key) const {
-         auto node = AVLTree::get(key);
-         return node->value();
+         return AVLTreeBase::get(key)->value().second;
       }
    };
 }
