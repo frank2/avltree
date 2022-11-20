@@ -413,44 +413,41 @@ namespace exception {
          }
       }
 
-      void update_height(SharedNode &node) {
+      virtual void update_node(SharedNode &node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          SharedNode update = node;
-
-         while (update != nullptr)
-         {
-            auto old_height = update->_height;
-            auto new_height = update->new_height();
-            auto balance = update->balance();
+         auto old_height = update->_height;
+         auto new_height = update->new_height();
+         auto balance = update->balance();
             
-            update->_height = new_height;
+         update->_height = new_height;
 
-            if (balance > 1 || balance < -1)
-            {
-               this->rebalance_node(update);
-               return;
-            }
-
-            if (old_height == new_height) { return; }
-
-            update = update->_parent;
+         if (balance > 1 || balance < -1)
+         {
+            this->rebalance_node(update);
+            return;
          }
+
+         if (old_height == new_height) { return; }
+
+         if (update->_parent != nullptr)
+            return this->update_node(update->_parent);
       }
 
-      SharedNode allocate_node(const Value &value) {
+      virtual SharedNode allocate_node(const Value &value) {
          auto node = std::make_shared<Node>(value);
 
          return node;
       }
 
-      SharedNode copy_node(ConstSharedNode node) {
-         auto node = std::make_shared<Node>(*node);
+      virtual SharedNode copy_node(ConstSharedNode node) {
+         auto new_node = std::make_shared<Node>(*node);
 
-         return node;
+         return new_node;
       }
          
-      SharedNode add_node(const Value &value) {
+      virtual SharedNode add_node(const Value &value) {
          if (this->_root == nullptr)
          {
             this->_root = this->allocate_node(value);
@@ -471,19 +468,20 @@ namespace exception {
          if (branch < 0) { this->set_left_child(parent, new_node); }
          else { this->set_right_child(parent, new_node); }
 
-         this->update_height(new_node);
+         this->update_node(new_node);
 
          ++this->_size;
 
          return new_node;
       }
 
-      void remove_node(const Value &value) {
+      virtual SharedNode remove_node(const Value &value) {
          if (this->is_empty()) { throw exception::EmptyTree(); }
 
          auto key = KeyOfValue()(value);
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
+         SharedNode update_node = nullptr;
 
          if (last_node.second != 0) { throw exception::NodeNotFound(); }
 
@@ -508,7 +506,7 @@ namespace exception {
                auto parent = node->_parent;
                node->_parent.reset();
 
-               this->update_height(parent);
+               update_node = parent;
             }
          }
          else if (node->_left == nullptr || node->_right == nullptr)
@@ -525,17 +523,17 @@ namespace exception {
             if (node == this->_root)
             {
                this->_root = replacement_node;
-               this->update_height(this->_root);
+               update_node = this->_root;
             }
             else if (node->_parent->_left == node)
             {
                node->_parent->_left = replacement_node;
-               this->update_height(node->_parent);
+               update_node = node->_parent;
             }
             else if (node->_parent->_right == node)
             {
                node->_parent->_right = replacement_node;
-               this->update_height(node->_parent);
+               update_node = node->_parent;
             }
          }
          else if (node->_left != nullptr && node->_right != nullptr)
@@ -578,14 +576,14 @@ namespace exception {
             }
 
             if (node == this->_root)
-               this->_root = std::static_pointer_cast<Node>(leftmost);
+               this->_root = leftmost;
 
             if (replaced_node != nullptr)
-               this->update_height(replaced_node);
+               update_node = replaced_node;
             else if (leftmost_parent != node)
-               this->update_height(leftmost_parent);
+               update_node = leftmost_parent;
             else
-               this->update_height(leftmost);
+               update_node = leftmost;
          }
 
          node->_left.reset();
@@ -593,6 +591,10 @@ namespace exception {
          node->_parent.reset();
 
          --this->_size;
+
+         if (update_node != nullptr) { this->update_node(update_node); }
+
+         return update_node;
       }
 
    public:

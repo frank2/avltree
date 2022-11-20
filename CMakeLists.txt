@@ -20,6 +20,5 @@ add_executable(testavltree ${PROJECT_SOURCE_DIR}/test/main.cpp ${PROJECT_SOURCE_
 target_link_libraries(testavltree INTERFACE libavltree)
 target_include_directories(testavltree PUBLIC
   "${PROJECT_SOURCE_DIR}/test"
-  "${PROJECT_SOURCE_DIR}/include"
 )
 add_test(NAME testavltree COMMAND testavltree)
