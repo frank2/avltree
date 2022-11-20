@@ -413,7 +413,7 @@ namespace exception {
          }
       }
 
-      virtual void update_node(SharedNode &node) {
+      virtual void update_node(SharedNode &node, bool update_parent=true) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          SharedNode update = node;
@@ -431,8 +431,8 @@ namespace exception {
 
          if (old_height == new_height) { return; }
 
-         if (update->_parent != nullptr)
-            return this->update_node(update->_parent);
+         if (update_parent && update->_parent != nullptr)
+            return this->update_node(update->_parent, update_parent);
       }
 
       virtual SharedNode allocate_node(const Value &value) {
