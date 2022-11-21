@@ -324,7 +324,7 @@ namespace exception {
          else { parent->_right = target; }
       }
 
-      void rotate_left(SharedNode &rotation_root) {
+      virtual void rotate_left(SharedNode &rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
          auto pivot_root = rotation_root->_right;
@@ -351,7 +351,7 @@ namespace exception {
          pivot_root->_height = pivot_root->new_height();
       }
 
-      void rotate_right(SharedNode &rotation_root) {
+      virtual void rotate_right(SharedNode &rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
          auto pivot_root = rotation_root->_left;
@@ -378,7 +378,7 @@ namespace exception {
          pivot_root->_height = pivot_root->new_height();
       }
 
-      void rebalance_node(SharedNode &node) {
+      virtual void rebalance_node(SharedNode &node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          auto balance = node->balance();
@@ -413,7 +413,7 @@ namespace exception {
          }
       }
 
-      virtual void update_node(SharedNode &node, bool update_parent=true) {
+      virtual void update_node(SharedNode &node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          SharedNode update = node;
@@ -431,8 +431,8 @@ namespace exception {
 
          if (old_height == new_height) { return; }
 
-         if (update_parent && update->_parent != nullptr)
-            return this->update_node(update->_parent, update_parent);
+         if (update->_parent != nullptr)
+            return this->update_node(update->_parent);
       }
 
       virtual SharedNode allocate_node(const Value &value) {
