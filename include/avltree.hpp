@@ -82,6 +82,13 @@ namespace exception {
          Node () : _value(Value()), _parent(nullptr), _left(nullptr), _right(nullptr), _height(0) {}
          Node(const Value &value) : _value(value), _parent(nullptr), _left(nullptr), _right(nullptr), _height(0) {}
          Node(const Node &other) : _value(other._value), _parent(other._parent), _left(other._left), _right(other._right), _height(other._height) {}
+
+         virtual void copy_node_data(const Node &other) {
+            this->_height = other._height;
+            this->_parent = other._parent;
+            this->_left = other._left;
+            this->_right = other._right;
+         }
                   
          inline const Key &key() const { return KeyOfValue()(this->value()); }
          inline Value &value() { return this->_value; }
@@ -556,10 +563,7 @@ namespace exception {
                   replaced_node->_parent = leftmost->_parent;
             }
 
-            leftmost->_right = node->_right;
-            leftmost->_left = node->_left;
-            leftmost->_parent = node->_parent;
-            leftmost->_height = node->_height;
+            leftmost->copy_node_data(*node);
 
             if (leftmost->_left != nullptr)
                leftmost->_left->_parent = leftmost;
