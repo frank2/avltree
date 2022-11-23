@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 
 project(libavltree)
 
-option(ENABLE_TESTING "Enable testing for AVLTree." OFF)
+option(TEST_AVLTREE "Enable testing for AVLTree." OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -17,7 +17,7 @@ target_include_directories(libavltree INTERFACE
   "${PROJECT_SOURCE_DIR}/include"
 )
 
-if (ENABLE_TESTING)
+if (TEST_AVLTREE)
   enable_testing()
   add_executable(testavltree ${PROJECT_SOURCE_DIR}/test/main.cpp ${PROJECT_SOURCE_DIR}/test/framework.hpp)
   target_link_libraries(testavltree INTERFACE libavltree)
