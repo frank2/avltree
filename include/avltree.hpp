@@ -1022,7 +1022,7 @@ namespace exception {
          if (this->_root != nullptr)
             this->destroy();
          
-         if (other.root == nullptr) { return; }
+         if (other._root == nullptr) { return; }
 
          std::vector<ConstSharedNode> visiting = { other.root };
          std::vector<SharedNode> added = { this->copy_node(other.root) }
