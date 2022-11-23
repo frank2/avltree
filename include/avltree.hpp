@@ -424,22 +424,26 @@ namespace exception {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          SharedNode update = node;
-         auto old_height = update->_height;
-         auto new_height = update->new_height();
-         auto balance = update->balance();
-            
-         update->_height = new_height;
 
-         if (balance > 1 || balance < -1)
+         while (update != nullptr)
          {
-            this->rebalance_node(update);
-            return;
+            auto old_height = update->_height;
+            auto new_height = update->new_height();
+            auto balance = update->balance();
+            
+            update->_height = new_height;
+
+            if (balance > 1 || balance < -1)
+            {
+               this->rebalance_node(update);
+               return;
+            }
+
+            if (old_height == new_height) { return; }
+
+            if (update->_parent != nullptr)
+               update = update->_parent;
          }
-
-         if (old_height == new_height) { return; }
-
-         if (update->_parent != nullptr)
-            return this->update_node(update->_parent);
       }
 
       virtual SharedNode allocate_node(const Value &value) {
