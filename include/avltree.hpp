@@ -993,11 +993,8 @@ namespace exception {
          
          this->remove_node(last_node.first->value());
       }
-      std::vector<Value> to_vec() {
-         return std::vector<Value>(this->begin(), this->end());
-      }
-      std::vector<const Value> to_vec() const {
-         return std::vector<const Value>(this->cbegin(), this->cend());
+      std::vector<Value> to_vec() const {
+         return std::vector<Value>(this->cbegin(), this->cend());
       }
       inline std::size_t size() const {
          return this->_size;
