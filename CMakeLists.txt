@@ -11,7 +11,7 @@ file(GLOB_RECURSE HEADER_FILES FOLLOW_SYMLINKS ${PROJECT_SOURCE_DIR}/include/*.h
 source_group(TREE "${PROJECT_SOURCE_DIR}" PREFIX "Header Files" FILES ${HEADER_FILES})
 add_library(libavltree INTERFACE)
   
-target_include_directories(libavltree INTERFACE
+target_include_directories(libavltree PUBLIC
   "${PROJECT_SOURCE_DIR}/include"
 )
 
