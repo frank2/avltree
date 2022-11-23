@@ -847,7 +847,7 @@ namespace exception {
       };
 
       using iterator = value_iterator<postorder_iterator>;
-      using const_iterator = value_iterator<const_postorder_iterator>;
+      using const_iterator = const_value_iterator<const_postorder_iterator>;
 
       AVLTreeBase() : _size(0) {}
       AVLTreeBase(std::vector<Value> &nodes) : _size(0) {
