@@ -1024,8 +1024,8 @@ namespace exception {
          
          if (other._root == nullptr) { return; }
 
-         std::vector<ConstSharedNode> visiting = { other.root };
-         std::vector<SharedNode> added = { this->copy_node(other.root) }
+         std::vector<ConstSharedNode> visiting = { other._root };
+         std::vector<SharedNode> added = { this->copy_node(other._root) }
          std::size_t parent_index = 0;
 
          this->_root = added.front();
