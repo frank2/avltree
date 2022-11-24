@@ -152,7 +152,7 @@ namespace exception {
             
             while (this->node->_left != nullptr)
             {
-               this->node = std::dynamic_pointer_cast<Node>(this->node->_left);
+               this->node = this->node->_left;
             }
          }
          inorder_iterator_base(const inorder_iterator_base &other) : node(other.node) {}
@@ -165,19 +165,19 @@ namespace exception {
 
             if (this->node->_right != nullptr)
             {
-               this->node = std::dynamic_pointer_cast<Node>(this->node->_right);
+               this->node = this->node->_right;
 
                while (this->node->_left != nullptr)
-                  this->node = std::dynamic_pointer_cast<Node>(this->node->_left);
+                  this->node = this->node->_left;
             }
             else
             {
-               auto parent = std::dynamic_pointer_cast<Node>(this->node->_parent);
+               auto parent = this->node->_parent;
 
-               while (parent != nullptr && this->node == std::dynamic_pointer_cast<Node>(parent->_right))
+               while (parent != nullptr && this->node == parent->_right)
                {
                   this->node = parent;
-                  parent = std::dynamic_pointer_cast<Node>(parent->_parent);
+                  parent = parent->_parent;
                }
 
                this->node = parent;
@@ -213,19 +213,22 @@ namespace exception {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             if (this->node->_left != nullptr)
-               this->node = std::dynamic_pointer_cast<Node>(this->node->_left);
+               this->node = this->node->_left;
             else if (this->node->_right != nullptr)
-               this->node = std::dynamic_pointer_cast<Node>(this->node->_right);
+               this->node = this->node->_right;
             else {
-               auto parent = std::dynamic_pointer_cast<Node>(this->node->_parent);
+               auto parent = this->node->_parent;
 
-               while (parent != nullptr && this->node == std::dynamic_pointer_cast<Node>(parent->_right))
+               while (parent != nullptr && (this->node == parent->_right || parent->_right == nullptr))
                {
                   this->node = parent;
-                  parent = std::dynamic_pointer_cast<Node>(parent->_parent);
+                  parent = parent->_parent;
                }
 
-               this->node = parent;
+               if (parent != nullptr)
+                  this->node = parent->_right;
+               else
+                  this->node = parent;
             }
                    
             return *this;
@@ -256,29 +259,29 @@ namespace exception {
             if (node == nullptr) return;
             
             while (this->node->_left != nullptr)
-               this->node = std::static_pointer_cast<Node>(this->node->_left);
+               this->node = this->node->_left;
 
             while (this->node->_right != nullptr)
-               this->node = std::static_pointer_cast<Node>(this->node->_right);
+               this->node = this->node->_right;
          }
 
          postorder_iterator_base& operator++() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
-            auto parent = std::static_pointer_cast<Node>(this->node->_parent);
+            auto parent = this->node->_parent;
 
-            if (parent != nullptr && this->node == std::static_pointer_cast<Node>(parent->_left))
+            if (parent != nullptr && this->node == parent->_left)
             {
                if (parent->_right == nullptr)
                   this->node = parent;
                else {
-                  this->node = std::static_pointer_cast<Node>(parent->_right);
+                  this->node = parent->_right;
 
                   while (this->node->_left != nullptr)
-                     this->node = std::static_pointer_cast<Node>(this->node->_left);
+                     this->node = this->node->_left;
                   
                   while (this->node->_right != nullptr)
-                     this->node = std::static_pointer_cast<Node>(this->node->_right);
+                     this->node = this->node->_right;
                }
             }
             else
