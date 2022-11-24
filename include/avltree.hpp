@@ -622,17 +622,7 @@ namespace exception {
 
             return this->node;
          }
-         const reference operator*() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return this->node;
-         }
          pointer operator->() {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return &this->node;
-         }
-         const pointer operator->() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return &this->node;
@@ -650,12 +640,12 @@ namespace exception {
 
          const_inorder_iterator(ConstSharedNode node) : inorder_iterator_base(node) {}
 
-         reference operator*() const {
+         reference operator*() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return this->node;
          }
-         pointer operator->() const {
+         pointer operator->() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return &this->node;
@@ -678,17 +668,7 @@ namespace exception {
 
             return this->node;
          }
-         const reference operator*() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return this->node;
-         }
          pointer operator->() {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return &this->node;
-         }
-         const pointer operator->() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return &this->node;
@@ -706,12 +686,12 @@ namespace exception {
 
          const_preorder_iterator(ConstSharedNode node) : preorder_iterator_base(node) {}
 
-         reference operator*() const {
+         reference operator*() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return this->node;
          }
-         pointer operator->() const {
+         pointer operator->() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return &this->node;
@@ -734,17 +714,7 @@ namespace exception {
 
             return this->node;
          }
-         const reference operator*() const {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return this->node;
-         }
          pointer operator->() {
-            if (this->node == nullptr) { throw exception::NullPointer(); }
-
-            return &this->node;
-         }
-         const pointer operator->() const {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return &this->node;
@@ -762,12 +732,12 @@ namespace exception {
 
          const_postorder_iterator(ConstSharedNode node) : postorder_iterator_base(node) {}
 
-         reference operator*() const {
+         reference operator*() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return this->node;
          }
-         pointer operator->() const {
+         pointer operator->() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
 
             return &this->node;
