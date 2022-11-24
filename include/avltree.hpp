@@ -301,7 +301,7 @@ namespace exception {
       SharedNode _root;
       std::size_t _size;
 
-      void set_right_child(SharedNode &target, SharedNode &child) {
+      void set_right_child(SharedNode target, SharedNode child) {
          if (target == nullptr) { throw exception::NullPointer(); }
          
          target->_right = child;
@@ -310,7 +310,7 @@ namespace exception {
             child->_parent = target;
       }
 
-      void set_left_child(SharedNode &target, SharedNode &child) {
+      void set_left_child(SharedNode target, SharedNode child) {
          if (target == nullptr) { throw exception::NullPointer(); }
 
          target->_left = child;
@@ -319,7 +319,7 @@ namespace exception {
             child->_parent = target;
       }
 
-      void set_parent(SharedNode &target, SharedNode &parent) {
+      void set_parent(SharedNode target, SharedNode parent) {
          if (target == nullptr) { throw exception::NullPointer(); }
 
          if (parent == nullptr) { 
@@ -334,7 +334,7 @@ namespace exception {
          else { parent->_right = target; }
       }
 
-      virtual void rotate_left(SharedNode &rotation_root) {
+      virtual void rotate_left(SharedNode rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
          auto pivot_root = rotation_root->_right;
@@ -361,7 +361,7 @@ namespace exception {
          pivot_root->_height = pivot_root->new_height();
       }
 
-      virtual void rotate_right(SharedNode &rotation_root) {
+      virtual void rotate_right(SharedNode rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
          auto pivot_root = rotation_root->_left;
@@ -388,7 +388,7 @@ namespace exception {
          pivot_root->_height = pivot_root->new_height();
       }
 
-      virtual void rebalance_node(SharedNode &node) {
+      virtual void rebalance_node(SharedNode node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          auto balance = node->balance();
@@ -423,7 +423,7 @@ namespace exception {
          }
       }
 
-      virtual void update_node(SharedNode &node) {
+      virtual void update_node(SharedNode node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
          SharedNode update = node;
