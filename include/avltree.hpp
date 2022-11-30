@@ -960,6 +960,8 @@ namespace exception {
          return this->add_node(value);
       }
       void remove(const Key &key) {
+         if (this->_root == nullptr) { return; }
+         
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
          if (last_node.second != 0) { throw exception::KeyNotFound(); }
