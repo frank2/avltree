@@ -873,6 +873,8 @@ namespace exception {
       inline SharedNode root() { return this->_root; }
       inline ConstSharedNode root() const { return this->_root; }
       bool contains(const Key &key) const {
+         if (this->_root == nullptr) { return false; }
+         
          auto traversal = this->search(key);
          auto last_node = *traversal.rbegin();
 
