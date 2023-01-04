@@ -141,12 +141,12 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-types" name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a60cee3e4588c71f2fd2cfb9f8c3a1ff8"><td class="memItemLeft" align="right" valign="top"><a id="a60cee3e4588c71f2fd2cfb9f8c3a1ff8" name="a60cee3e4588c71f2fd2cfb9f8c3a1ff8"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>KeyType</b> = typename Key</td></tr>
-<tr class="separator:a60cee3e4588c71f2fd2cfb9f8c3a1ff8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac153c7269e61b2e542f2d41fa1767fa3"><td class="memItemLeft" align="right" valign="top"><a id="ac153c7269e61b2e542f2d41fa1767fa3" name="ac153c7269e61b2e542f2d41fa1767fa3"></a>
-using&#160;</td><td class="memItemRight" valign="bottom"><b>ValueType</b> = typename Value</td></tr>
-<tr class="separator:ac153c7269e61b2e542f2d41fa1767fa3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a739b65522d19f4696700fa98dd785f23"><td class="memItemLeft" align="right" valign="top"><a id="a739b65522d19f4696700fa98dd785f23" name="a739b65522d19f4696700fa98dd785f23"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>KeyType</b> = Key</td></tr>
+<tr class="separator:a739b65522d19f4696700fa98dd785f23"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a568e17124ea664443ef0cf54ec739910"><td class="memItemLeft" align="right" valign="top"><a id="a568e17124ea664443ef0cf54ec739910" name="a568e17124ea664443ef0cf54ec739910"></a>
+using&#160;</td><td class="memItemRight" valign="bottom"><b>ValueType</b> = Value</td></tr>
+<tr class="separator:a568e17124ea664443ef0cf54ec739910"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac6137881a785d0833bcd1dcfd36581c6"><td class="memItemLeft" align="right" valign="top"><a id="ac6137881a785d0833bcd1dcfd36581c6" name="ac6137881a785d0833bcd1dcfd36581c6"></a>
 using&#160;</td><td class="memItemRight" valign="bottom"><b>SharedNode</b> = std::shared_ptr&lt; <a class="el" href="classavltree_1_1_a_v_l_tree_base_1_1_node.html">Node</a> &gt;</td></tr>
 <tr class="separator:ac6137881a785d0833bcd1dcfd36581c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -379,7 +379,7 @@ std::size_t&#160;</td><td class="memItemRight" valign="bottom"><b>_size</b></td>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><div class="compoundTemplParams">template&lt;typename Key, typename Value, typename KeyOfValue, typename KeyCompare&gt;<br />
 class avltree::AVLTreeBase&lt; Key, Value, KeyOfValue, KeyCompare &gt;</div><p >The base implementation of an AVL tree. </p>
-<p ><b>NOTE</b>: For a basic AVL tree implementation, this interface is too complex. See the <a class="el" href="classavltree_1_1_a_v_l_tree.html" title="A simplified AVLTree interface.">AVLTree</a> class for a more basic interface to an AVL tree.</p>
+<p ><b>NOTE</b>: For a basic AVL tree implementation, this interface is too complex. See the <a class="el" href="classavltree_1_1_a_v_l_tree.html" title="A simplified AVLTree interface.">AVLTree</a> class for a more basic interface to an AVL tree. Additionally, because of how verbose the template arguments are, it is recommended you employ a typedef to save yourself the typing.</p>
 <p >This is the base AVL tree implementation. Its template interface is designed in this way to handle mapping objects, and takes inspiration from libstdc++'s red-black tree interface for its implementation of a map. For implementing some tree-based objects that have a map-like design, this is the interface to use. Otherwise, the simplified versions of this interface, separated into <a class="el" href="classavltree_1_1_a_v_l_tree.html" title="A simplified AVLTree interface.">AVLTree</a> and <a class="el" href="classavltree_1_1_a_v_l_map.html" title="A mapping implementation based on an AVL tree.">AVLMap</a>, should suffice.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
