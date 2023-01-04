@@ -93,7 +93,8 @@ namespace exception {
    /// @brief The base implementation of an AVL tree.
    ///
    /// **NOTE**: For a basic AVL tree implementation, this interface is too complex. See the AVLTree class
-   /// for a more basic interface to an AVL tree.
+   /// for a more basic interface to an AVL tree. Additionally, because of how verbose the template arguments
+   /// are, it is recommended you employ a typedef to save yourself the typing.
    ///
    /// This is the base AVL tree implementation. Its template interface is designed in this way to handle
    /// mapping objects, and takes inspiration from libstdc++'s red-black tree interface for its implementation
