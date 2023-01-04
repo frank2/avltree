@@ -1456,11 +1456,12 @@ namespace exception {
    class AVLTree : public AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>
    {
    public:
-      using iterator = typename AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>::const_iterator;
+      using TreeBase = AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>;
+      using iterator = typename TreeBase::const_iterator;
 
-      AVLTree() : AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>() {}
-      AVLTree(std::vector<Key> &nodes) : AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>(nodes) {}
-      AVLTree(const AVLTree &other) : AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>(other) {}
+      AVLTree() : TreeBase() {}
+      AVLTree(std::vector<Key> &nodes) : TreeBase(nodes) {}
+      AVLTree(const AVLTree &other) : TreeBase(other) {}
 
       /// @brief Return an iterator of values at the beginning of this tree.
       ///
@@ -1504,9 +1505,11 @@ namespace exception {
    class AVLMap : public AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>
    {
    public:
-      AVLMap() : AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>() {}
-      AVLMap(std::vector<std::pair<const Key, Value>> &nodes) : AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>(nodes) {}
-      AVLMap(const AVLMap &other) : AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>(other) {}
+      using TreeBase = AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>;
+      
+      AVLMap() : TreeBase() {}
+      AVLMap(std::vector<std::pair<const Key, Value>> &nodes) : TreeBase(nodes) {}
+      AVLMap(const AVLMap &other) : TreeBase(other) {}
 
       /// @brief Access the given mapping value with the given key.
       ///
@@ -1548,7 +1551,7 @@ namespace exception {
       /// @param value The value to give the new node.
       ///
       void insert(const Key &key, const Value &value) {
-         AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>::insert(std::make_pair(key, value));
+         TreeBase::insert(std::make_pair(key, value));
       }
 
       /// @brief Get the value associated with the given key.
@@ -1557,7 +1560,7 @@ namespace exception {
       /// @throws exception::KeyNotFound Thrown if the given key isn't found.
       ///
       Value &get(const Key &key) {
-         return AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>::get(key)->value().second;
+         return TreeBase::get(key)->value().second;
       }
 
       /// @brief Get the const value associated with the given key.
@@ -1566,7 +1569,7 @@ namespace exception {
       /// @throws exception::KeyNotFound Thrown if the given key isn't found.
       ///
       const Value &get(const Key &key) const {
-         return AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>::get(key)->value().second;
+         return TreeBase::get(key)->value().second;
       }
    };
 }
