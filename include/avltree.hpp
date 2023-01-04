@@ -121,8 +121,8 @@ namespace exception {
    public:
       class Node;
       
-      using KeyType = typename Key;
-      using ValueType = typename Value;
+      using KeyType = Key;
+      using ValueType = Value;
       using SharedNode = std::shared_ptr<Node>;
       using ConstSharedNode = std::shared_ptr<const Node>;
 
@@ -506,8 +506,8 @@ namespace exception {
 
          auto branch = parent->compare(target);
 
-         if branch == 0 { throw exception::NodeKeysMatch(); }
-         else if branch < 0 { parent->_left = target; }
+         if (branch == 0) { throw exception::NodeKeysMatch(); }
+         else if (branch < 0) { parent->_left = target; }
          else { parent->_right = target; }
       }
 
@@ -854,7 +854,7 @@ namespace exception {
          using pointer = value_type *;
          using reference = value_type &;
 
-         inorder_iterator(SharedNode node) : inorder_iterator_base(node) {}
+         inorder_iterator(SharedNode node) : inorder_iterator_base<SharedNode>(node) {}
          
          reference operator*() {
             if (this->node == nullptr) { throw exception::NullPointer(); }
