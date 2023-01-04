@@ -1,6 +1,18 @@
 #ifndef __AVLTREE_HPP
 #define __AVLTREE_HPP
 
+//! @mainpage AVL Tree
+//!
+//! An **[AVL tree](https://en.wikipedia.org/wiki/AVL_tree)** is a self-balancing binary tree structure.
+//! It can be the basis of many types of data structures. For example, a
+//! **[red-black tree](https://en.wikipedia.org/wiki/Red%E2%80%93black_tree)**-- which is a similar data
+//! structure to an AVL tree-- is the basis for many common C++ data structures, such as mappings and sets.
+//!
+//! This library attempts to provide a basic, customizable AVL tree for the implementation of other data
+//! structures which call for a self-balancing tree, such as an
+//! [interval tree](https://en.wikipedia.org/wiki/Interval_tree).
+//!
+
 #include <exception>
 #include <functional>
 #include <iostream>
@@ -14,50 +26,95 @@
 namespace avltree
 {
 namespace exception {
+   /// @brief The base exception of exceptions thrown by this library.
+   ///
    class Exception : public std::exception
    {
    public:
+      /// @brief The error string returned by the exception.
+      ///
       std::string error;
 
       Exception() : std::exception() {}
       Exception(std::string error) : error(error), std::exception() {}
 
+      /// @brief Return a C-style string of this exception.
+      ///
+      /// This is mostly for reverse-compatibility with std::exception.
+      ///
       const char *what() const noexcept {
          return this->error.c_str();
       }
    };
 
+   /// @brief Exception thrown when encountering an unexpected null pointer.
+   ///
    class NullPointer : public Exception {
    public:
       NullPointer() : Exception("Encountered an unexpected null pointer.") {}
    };
 
+   /// @brief Exception thrown when the keys of two nodes match when they shouldn't.
+   ///
    class NodeKeysMatch : public Exception {
    public:
       NodeKeysMatch() : Exception("Node keys unexpectedly matched.") {}
    };
 
+   /// @brief Exception thrown when the key already exists within the tree.
+   ///
    class KeyExists : public Exception {
    public:
       KeyExists() : Exception("The key already exists in the tree.") {}
    };
 
+   /// @brief Exception thrown when the tree contains no nodes.
+   ///
    class EmptyTree : public Exception {
    public:
       EmptyTree() : Exception("The tree is empty.") {}
    };
 
+   /// @brief Exception thrown when the node being searched wasn't found.
+   ///
    class NodeNotFound : public Exception {
    public:
       NodeNotFound() : Exception("The node was not found.") {}
    };
 
+   /// @brief Exception thrown when the key is not found in the tree.
+   ///
    class KeyNotFound : public Exception {
    public:
       KeyNotFound() : Exception("The key was not found in the tree.") {}
    };
 }
-   
+
+   /// @brief The base implementation of an AVL tree.
+   ///
+   /// **NOTE**: For a basic AVL tree implementation, this interface is too complex. See the AVLTree class
+   /// for a more basic interface to an AVL tree.
+   ///
+   /// This is the base AVL tree implementation. Its template interface is designed in this way to handle
+   /// mapping objects, and takes inspiration from libstdc++'s red-black tree interface for its implementation
+   /// of a map. For implementing some tree-based objects that have a map-like design, this is the interface
+   /// to use. Otherwise, the simplified versions of this interface, separated into AVLTree and AVLMap, should
+   /// suffice.
+   ///
+   /// @tparam Key The type class of the object that acts as the node's key, also known as its label. This value
+   /// is the value responsible for indexing the nodes in the tree. This is expected to be a constant value-- undefined
+   /// behavior is likely to happen if you modify a tree node's key.
+   ///
+   /// @tparam Value The value type class of the object, which is expected to host the key value in some way, whose
+   /// extraction of said key is determined by the functor KeyOfValue. This type can be the same as the key type with
+   /// use of the KeyIsValue functor.
+   ///
+   /// @tparam KeyOfValue The functor which extracts the node's Key type value from the node's Value object. See
+   /// KeyIsValue and KeyOfPair for examples of how to use this value.
+   ///
+   /// @tparam KeyCompare The key comparison functor, usually std::less<Key>. This functor must conform to C++'s
+   /// [Compare requirements](https://en.cppreference.com/w/cpp/named_req/Compare).
+   ///
    template <typename Key, typename Value, typename KeyOfValue, typename KeyCompare>
    class AVLTreeBase
    {
@@ -69,12 +126,34 @@ namespace exception {
       using SharedNode = std::shared_ptr<Node>;
       using ConstSharedNode = std::shared_ptr<const Node>;
 
+      /// @brief A node object for an AVL tree.
+      ///
+      /// This object contains data about a given node's key object, value, tree height and node relationships.
+      ///
       class Node
       {
       protected:
+         /// @brief The value data of the node.
+         ///
+         /// This contains the node's key.
+         ///
          Value _value;
+         
+         /// @brief The height of the node in the tree.
+         ///
          int _height;
-         SharedNode _parent, _left, _right;
+
+         /// @brief The parent node of this node.
+         ///
+         SharedNode _parent;
+
+         /// @brief The left child of this node.
+         ///
+         SharedNode _left;
+
+         /// @brief The right child of this node.
+         ///
+         SharedNode _right;
          
       public:
          friend class AVLTreeBase;
@@ -83,26 +162,59 @@ namespace exception {
          Node(const Value &value) : _value(value), _parent(nullptr), _left(nullptr), _right(nullptr), _height(0) {}
          Node(const Node &other) : _value(other._value), _parent(other._parent), _left(other._left), _right(other._right), _height(other._height) {}
 
+         /// @brief Copy everything except the value from the given node.
+         ///
+         /// This is useful for certain cases when deleting nodes from the tree.
+         ///
          virtual void copy_node_data(const Node &other) {
             this->_height = other._height;
             this->_parent = other._parent;
             this->_left = other._left;
             this->_right = other._right;
          }
-                  
+
+         /// @brief Get the key value of this node.
+         ///
+         /// This calls the KeyOfValue functor against the value object within the node and returns it.
+         ///
          inline const Key &key() const { return KeyOfValue()(this->value()); }
+         /// @brief Get the value object of this node.
+         ///
          inline Value &value() { return this->_value; }
+         /// @brief Get the const value object of this node.
+         ///
          inline const Value &value() const { return this->_value; }
+         /// @brief Get the height of this node.
+         ///
          inline int height() const { return this->_height; }
+         /// @brief Get the parent node of this node.
+         ///
          inline SharedNode parent() { return this->_parent; }
+         /// @brief Get the const parent node of this node.
+         ///
          inline ConstSharedNode parent() const { return this->_parent; }
+         /// @brief Get the left child of this node.
+         ///
          inline SharedNode left() { return this->_left; }
+         /// @brief Get the const left child of this node.
+         ///
          inline ConstSharedNode left() const { return this->_left; }
+         /// @brief Get the right child of this node.
+         ///
          inline SharedNode right() { return this->_right; }
+         /// @brief Get the const right child of this node.
+         ///
          inline ConstSharedNode right() const { return this->_right; }
 
+         /// @brief Determine if this node is a leaf node.
+         ///
          inline bool is_leaf() const { return this->_left == nullptr && this->_right == nullptr; }
 
+         /// @brief Do a binary comparison of the given key against the node's key.
+         ///
+         /// @returns 0 if the key is equal to the key in the node, -1 if the key is less than the node's key,
+         /// and 1 if the key is greater than the node's key.
+         ///
          int compare(const Key &key) const {
             auto ab = KeyCompare()(key, this->key());
             auto ba = KeyCompare()(this->key(), key);
@@ -112,19 +224,30 @@ namespace exception {
             else { return 1; }
          }
 
+         /// @brief Compare this node's key against the current node's key.
+         ///
+         /// See compare(const Key &key).
+         ///
          int compare(ConstSharedNode &node) const {
             if (node == nullptr) { throw exception::NullPointer(); }
 
             return this->compare(node->key());
          }
 
+         /// @brief Determine the balance of this given node.
+         ///
+         /// In other words, subtract the height of the right child against the height of the left child
+         /// and return the value.
+         ///
          int balance() const {
             auto left_height = (this->_left != nullptr) ? this->_left->height() : 0;
             auto right_height = (this->_right != nullptr) ? this->_right->height() : 0;
             
             return right_height - left_height;
          }
-                        
+
+         /// @brief Determine the new height value of this node.
+         ///
          int new_height() const {
             auto left_height = (this->_left != nullptr) ? this->_left->height() : 0;
             auto right_height = (this->_right != nullptr) ? this->_right->height() : 0;
@@ -134,6 +257,13 @@ namespace exception {
       };
 
    protected:
+      /// @brief The base iterator for performing an in-order traversal.
+      ///
+      /// This class is the base class for iterating over the nodes in the tree in an
+      /// [in-order traversal](https://en.wikipedia.org/wiki/Tree_traversal#In-order,_LNR).
+      ///
+      /// @tparam NodeType The node class for the base iterator. Can be either SharedNode or ConstSharedNode.
+      ///
       template <typename NodeType>
       class inorder_iterator_base
       {
@@ -194,6 +324,13 @@ namespace exception {
          NodeType node;
       };
 
+      /// @brief The base iterator for performing a pre-order traversal.
+      ///
+      /// This class is the base class for iterating over the nodes in the tree in a
+      /// [pre-order traversal](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR).
+      ///
+      /// @tparam NodeType The node class for the base iterator. Can be either SharedNode or ConstSharedNode.
+      ///
       template <typename NodeType>
       class preorder_iterator_base
       {
@@ -242,6 +379,13 @@ namespace exception {
          NodeType node;
       };
 
+      /// @brief The base iterator for performing a post-order traversal.
+      ///
+      /// This class is the base class for iterating over the nodes in the tree in a
+      /// [post-order traversal](https://en.wikipedia.org/wiki/Tree_traversal#Post-order,_LRN).
+      ///
+      /// @tparam NodeType The node class for the base iterator. Can be either SharedNode or ConstSharedNode.
+      ///
       template <typename NodeType>
       class postorder_iterator_base
       {
@@ -298,9 +442,22 @@ namespace exception {
          NodeType node;
       };
 
+      /// @brief The root of the tree.
+      ///
       SharedNode _root;
+      /// @brief The number of nodes in the tree.
+      ///
       std::size_t _size;
 
+      /// @brief Set the right child of the given node.
+      ///
+      /// This sets the *target* as the parent of *child* and the *child* as the right-child of *target*.
+      ///
+      /// @param target The node to set the right child of.
+      /// @param child The child node to set in the target.
+      ///
+      /// @throws exception::NullPointer Thrown when the target argument is null.
+      ///
       void set_right_child(SharedNode target, SharedNode child) {
          if (target == nullptr) { throw exception::NullPointer(); }
          
@@ -310,6 +467,15 @@ namespace exception {
             child->_parent = target;
       }
 
+      /// @brief Set the left child of the given node.
+      ///
+      /// This sets the *target* as the parent of *child* and the *child* as the left-child of *target*.
+      ///
+      /// @param target The node to set the left child of.
+      /// @param child The child node to set in the target.
+      ///
+      /// @throws exception::NullPointer Thrown when the target argument is null.
+      ///
       void set_left_child(SharedNode target, SharedNode child) {
          if (target == nullptr) { throw exception::NullPointer(); }
 
@@ -319,6 +485,17 @@ namespace exception {
             child->_parent = target;
       }
 
+      /// @brief Set the parent of the given node.
+      ///
+      /// This sets the *parent* of the *target* node and sets the *target* as the left or right child
+      /// of the *parent*, depending on how it compares with the node.
+      ///
+      /// @param target The target node whose parent you wish to alter.
+      /// @param parent The parent node to change to.
+      ///
+      /// @throws exception::NullPointer Thrown when the target argument is null.
+      /// @throws exception::NodeKeysMatch Thrown when the target key is equal to the parent key.
+      ///
       void set_parent(SharedNode target, SharedNode parent) {
          if (target == nullptr) { throw exception::NullPointer(); }
 
@@ -334,6 +511,14 @@ namespace exception {
          else { parent->_right = target; }
       }
 
+      /// @brief Do a left rotation on the given node.
+      ///
+      /// See [the rebalancing section](https://en.wikipedia.org/wiki/AVL_tree#Rebalancing) for an AVL tree.
+      ///
+      /// @param rotation_root The node to rotate.
+      ///
+      /// @throws exception::NullPointer Thrown when the rotation root is null.
+      ///
       virtual void rotate_left(SharedNode rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
@@ -361,6 +546,14 @@ namespace exception {
          pivot_root->_height = pivot_root->new_height();
       }
 
+      /// @brief Do a right rotation on the given node.
+      ///
+      /// See [the rebalancing section](https://en.wikipedia.org/wiki/AVL_tree#Rebalancing) for an AVL tree.
+      ///
+      /// @param rotation_root The node to rotate.
+      ///
+      /// @throws exception::NullPointer Thrown when the rotation root is null.
+      ///
       virtual void rotate_right(SharedNode rotation_root) {
          if (rotation_root == nullptr) { throw exception::NullPointer(); }
          
@@ -388,6 +581,15 @@ namespace exception {
          pivot_root->_height = pivot_root->new_height();
       }
 
+      /// @brief Rebalance the given node if its balance is greater than 1 or less than -1.
+      ///
+      /// When a node needs to be rebalanced, certain rotation operations need to happen.
+      /// See [the rebalancing section](https://en.wikipedia.org/wiki/AVL_tree#Rebalancing) on AVL trees.
+      ///
+      /// @param node The node to rebalance.
+      ///
+      /// @throws exception::NullPointer Thrown when the node argument is null.
+      ///
       virtual void rebalance_node(SharedNode node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
@@ -423,6 +625,15 @@ namespace exception {
          }
       }
 
+      /// @brief Update the given node after an insertion or deletion operation.
+      ///
+      /// This function simply updates the height and verifies the tree is balanced, but is virtual
+      /// for tree objects which need to update more information or perform other actions.
+      ///
+      /// @param node The node to update.
+      ///
+      /// @throws exception::NullPointer Thrown when the node argument is null.
+      ///
       virtual void update_node(SharedNode node) {
          if (node == nullptr) { throw exception::NullPointer(); }
          
@@ -449,18 +660,32 @@ namespace exception {
          }
       }
 
+      /// @brief Allocate a new node object with the given value.
+      ///
+      /// @param value The value the node should have.
+      ///
       virtual SharedNode allocate_node(const Value &value) {
          auto node = std::make_shared<Node>(value);
 
          return node;
       }
 
+      /// @brief Create a copy of the given node.
+      ///
+      /// @param The node to copy.
+      ///
       virtual SharedNode copy_node(ConstSharedNode node) {
          auto new_node = std::make_shared<Node>(*node);
 
          return new_node;
       }
-         
+
+      /// @brief Add a new node to the tree.
+      ///
+      /// @param value The value the new node should have.
+      ///
+      /// @throws exception::KeyExists Thrown when the key of the given value already exists within the tree.
+      ///
       virtual SharedNode add_node(const Value &value) {
          if (this->_root == nullptr)
          {
@@ -489,6 +714,15 @@ namespace exception {
          return new_node;
       }
 
+      /// @brief Remove a given node from the tree with the given value.
+      ///
+      /// Note that only the key of the value is used to verify the node to delete, not the whole value itself.
+      ///
+      /// @param value The value object to remove from the tree.
+      ///
+      /// @throw exception::EmptyTree Thrown when the tree is empty.
+      /// @throw exception::NodeNotFound Thrown when the key of the value is not found within the tree.
+      ///
       virtual SharedNode remove_node(const Value &value) {
          if (this->is_empty()) { throw exception::EmptyTree(); }
 
@@ -609,6 +843,8 @@ namespace exception {
       }
 
    public:
+      /// @brief An iterator that performs an in-order traversal on the tree.
+      ///
       class inorder_iterator : public inorder_iterator_base<SharedNode>
       {
       public:
@@ -632,6 +868,8 @@ namespace exception {
          }
       };
 
+      /// @brief An iterator that performs an in-order traversal on the tree, returning const nodes.
+      ///
       class const_inorder_iterator : public inorder_iterator_base<ConstSharedNode>
       {
       public:
@@ -655,6 +893,8 @@ namespace exception {
          }
       };
 
+      /// @brief An iterator that performs a pre-order traversal on the tree.
+      ///
       class preorder_iterator : public preorder_iterator_base<SharedNode>
       {
       public:
@@ -678,6 +918,8 @@ namespace exception {
          }
       };
 
+      /// @brief An iterator that performs a pre-order traversal on the tree, returning const nodes.
+      ///
       class const_preorder_iterator : public preorder_iterator_base<ConstSharedNode>
       {
       public:
@@ -701,6 +943,8 @@ namespace exception {
          }
       };
 
+      /// @brief An iterator that performs a post-order traversal on the tree.
+      ///
       class postorder_iterator : public postorder_iterator_base<SharedNode>
       {
       public:
@@ -724,6 +968,8 @@ namespace exception {
          }
       };
 
+      /// @brief An iterator that performs a post-order traversal on the tree, returning const nodes.
+      ///
       class const_postorder_iterator : public postorder_iterator_base<ConstSharedNode>
       {
       public:
@@ -747,6 +993,11 @@ namespace exception {
          }
       };
 
+      /// @brief An iterator that yields value objects instead of nodes.
+      ///
+      /// @tparam iterator_base The base iterator to use as an iterator for this iterator. Options
+      /// are inorder_iterator, preorder_iterator and postorder_iterator.
+      ///
       template <typename iterator_base>
       class value_iterator : public iterator_base
       {
@@ -788,7 +1039,12 @@ namespace exception {
             return &this->node->value();
          }
       };
-      
+
+      /// @brief An iterator that yields const value objects instead of nodes.
+      ///
+      /// @tparam iterator_base The base iterator to use as an iterator for this iterator. Options
+      /// are inorder_iterator, preorder_iterator and postorder_iterator.
+      ///
       template <typename iterator_base>
       class const_value_iterator : public iterator_base
       {
@@ -834,44 +1090,120 @@ namespace exception {
          this->destroy();
       }
 
+      /// @brief Return an iterator at the beginning of an in-order traversal.
+      ///
       inorder_iterator begin_inorder() { return inorder_iterator(this->_root); }
+      /// @brief Return an iterator at the end of an in-order traversal.
+      ///
       inorder_iterator end_inorder() { return inorder_iterator(nullptr); }
+      /// @brief Return a const iterator at the beginning of an in-order traversal.
+      ///
       const_inorder_iterator cbegin_inorder() const { return const_inorder_iterator(this->_root); }
+      /// @brief Return a const iterator at the end of an in-order traversal.
+      ///
       const_inorder_iterator cend_inorder() const { return const_inorder_iterator(nullptr); }
 
+      /// @brief Return an iterator at the beginning of a pre-order traversal.
+      ///
       preorder_iterator begin_preorder() { return preorder_iterator(this->_root); }
+      /// @brief Return an iterator at the end of a pre-order traversal.
+      ///
       preorder_iterator end_preorder() { return preorder_iterator(nullptr); }
+      /// @brief Return a const iterator at the beginning of a pre-order traversal.
+      ///
       const_preorder_iterator cbegin_preorder() const { return const_preorder_iterator(this->_root); }
+      /// @brief Return a const iterator at the end of a pre-order traversal.
+      ///
       const_preorder_iterator cend_preorder() const { return const_preorder_iterator(nullptr); }
 
+      /// @brief Return an iterator at the beginning of a post-order traversal.
+      ///
       postorder_iterator begin_postorder() { return postorder_iterator(this->_root); }
+      /// @brief Return an iterator at the end of a post-order traversal.
+      ///
       postorder_iterator end_postorder() { return postorder_iterator(nullptr); }
+      /// @brief Return a const iterator at the beginning of a post-order traversal.
+      ///
       const_postorder_iterator cbegin_postorder() const { return const_postorder_iterator(this->_root); }
+      /// @brief Return a const iterator at the end of a post-order traversal.
+      ///
       const_postorder_iterator cend_postorder() const { return const_postorder_iterator(nullptr); }
 
+      /// @brief Returns a value iterator at the beginning of an in-order traversal.
+      ///
       value_iterator<inorder_iterator> begin_values_inorder() { return value_iterator<inorder_iterator>(this->_root); }
+      /// @brief Returns a value iterator at the end of an in-order traversal.
+      ///
       value_iterator<inorder_iterator> end_values_inorder() { return value_iterator<inorder_iterator>(nullptr); }
+      /// @brief Returns a const value iterator at the beginning of an in-order traversal.
+      ///
       const_value_iterator<const_inorder_iterator> cbegin_values_inorder() { return const_value_iterator<const_inorder_iterator>(this->_root); }
+      /// @brief Returns a const value iterator at the end of an in-order traversal.
+      ///
       const_value_iterator<const_inorder_iterator> cend_values_inorder() { return const_value_iterator<const_inorder_iterator>(nullptr); }
 
+      /// @brief Returns a value iterator at the beginning of a pre-order traversal.
+      ///
       value_iterator<preorder_iterator> begin_values_preorder() { return value_iterator<preorder_iterator>(this->_root); }
+      /// @brief Returns a value iterator at the end of a pre-order traversal.
+      ///
       value_iterator<preorder_iterator> end_values_preorder() { return value_iterator<preorder_iterator>(nullptr); }
+      /// @brief Returns a const value iterator at the beginning of a pre-order traversal.
+      ///
       const_value_iterator<const_preorder_iterator> cbegin_values_preorder() { return const_value_iterator<const_preorder_iterator>(this->_root); }
+      /// @brief Returns a const value iterator at the end of a pre-order traversal.
+      ///
       const_value_iterator<const_preorder_iterator> cend_values_preorder() { return const_value_iterator<const_preorder_iterator>(nullptr); }
 
+      /// @brief Returns a value iterator at the beginning of a post-order traversal.
+      ///
       value_iterator<postorder_iterator> begin_values_postorder() { return value_iterator<postorder_iterator>(this->_root); }
+      /// @brief Returns a value iterator at the end of a post-order traversal.
+      ///
       value_iterator<postorder_iterator> end_values_postorder() { return value_iterator<postorder_iterator>(nullptr); }
+      /// @brief Returns a const value iterator at the beginning of a post-order traversal.
+      ///
       const_value_iterator<const_postorder_iterator> cbegin_values_postorder() { return const_value_iterator<const_postorder_iterator>(this->_root); }
+      /// @brief Returns a const value iterator at the end of a post-order traversal.
+      ///
       const_value_iterator<const_postorder_iterator> cend_values_postorder() { return const_value_iterator<const_postorder_iterator>(nullptr); }
 
+      /// @brief Returns a default iterator to the beginning of the tree.
+      ///
+      /// The default iterator is a post-order value iterator.
+      ///
       iterator begin() { return iterator(this->_root); }
+      /// @brief Returns a default iterator to the end of the tree.
+      ///
+      /// The default iterator is a post-order value iterator.
+      ///
       iterator end() { return iterator(nullptr); }
+
+      /// @brief Returns a default const iterator to the beginning of the tree.
+      ///
+      /// The default iterator is a post-order value iterator.
+      ///
       const_iterator cbegin() const { return const_iterator(this->_root); }
+      /// @brief Returns a default const iterator to the end of the tree.
+      ///
+      /// The default iterator is a post-order value iterator.
+      ///
       const_iterator cend() const { return const_iterator(nullptr); }
 
+      /// @brief Determine if the tree is empty.
+      /// @returns True if the tree is empty, false otherwise.
+      ///
       inline bool is_empty() const { return this->_root == nullptr; }
+      /// @brief Get the root node of this tree.
+      ///
       inline SharedNode root() { return this->_root; }
+      /// @brief Get the const root node of this tree.
+      ///
       inline ConstSharedNode root() const { return this->_root; }
+      /// @brief Determine if the given key exists in the tree.
+      /// @param key The key value to search for.
+      /// @returns True if the key was found, false otherwise.
+      ///
       bool contains(const Key &key) const {
          if (this->_root == nullptr) { return false; }
          
@@ -880,6 +1212,16 @@ namespace exception {
 
          return last_node.second == 0;
       }
+      /// @brief Search the tree for the given key, returning const nodes.
+      ///
+      /// This function does a basic binary traversal on the tree for the given key, with the ability
+      /// to return the path taken in order to find that key-- or to not find that key. It will immediately
+      /// terminate when it finds the given key.
+      ///
+      /// @param key The key value to search for.
+      /// @returns A vector of pairs: the node that was traversed, and the number representing the path
+      /// which was taken. 1 means right, -1 means left, 0 means it matched the key.
+      ///
       std::vector<std::pair<ConstSharedNode, int>> search(const Key &key) const {
          auto result = std::vector<std::pair<ConstSharedNode, int>>();
          if (this->_root == nullptr) { return result; }
@@ -904,6 +1246,16 @@ namespace exception {
 
          return result;
       }
+      /// @brief Search the tree for the given key.
+      ///
+      /// This function does a basic binary traversal on the tree for the given key, with the ability
+      /// to return the path taken in order to find that key-- or to not find that key. It will immediately
+      /// terminate when it finds the given key.
+      ///
+      /// @param key The key value to search for.
+      /// @returns A vector of pairs: the node that was traversed, and the number representing the path
+      /// which was taken. 1 means right, -1 means left, 0 means it matched the key.
+      ///
       std::vector<std::pair<SharedNode, int>> search(const Key &key) {
          auto result = std::vector<std::pair<SharedNode, int>>();
          if (this->_root == nullptr) { return result; }
@@ -928,6 +1280,11 @@ namespace exception {
 
          return result;
       }
+      /// @brief Attempt to find the node corresponding to the given key in this tree.
+      ///
+      /// @param key The key to search for.
+      /// @returns The node with the given key, or std::nullopt if no node was found.
+      ///
       std::optional<SharedNode> find(const Key &key) {
          if (this->_root == nullptr) { return std::nullopt; }
          
@@ -937,6 +1294,11 @@ namespace exception {
          if (last_node.second == 0) { return last_node.first; }
          else { return std::nullopt; }
       }
+      /// @brief Attempt to find the const node corresponding to the given key in this tree.
+      ///
+      /// @param key The key to search for.
+      /// @returns The node with the given key, or std::nullopt if no node was found.
+      ///
       std::optional<ConstSharedNode> find(const Key &key) const {
          if (this->_root == nullptr) { return std::nullopt; }
          
@@ -946,21 +1308,42 @@ namespace exception {
          if (last_node.second == 0) { return last_node.first; }
          else { return std::nullopt; }
       }
+      /// @brief Attempt to get the node with the given key in the tree, throwing an exception if it fails.
+      /// @param key The key to search for.
+      /// @returns The node corresponding to the given key.
+      /// @throws exception::KeyNotFound Thrown if the key is not found in the tree.
+      ///
       SharedNode get(const Key &key) {
          auto result = this->find(key);
 
          if (result == std::nullopt) { throw exception::KeyNotFound(); }
          return *result;
       }
+      /// @brief Attempt to get the const node with the given key in the tree, throwing an exception if it fails.
+      /// @param key The key to search for.
+      /// @returns The node corresponding to the given key.
+      /// @throws exception::KeyNotFound Thrown if the key is not found in the tree.
+      ///
       ConstSharedNode get(const Key &key) const {
          auto result = this->find(key);
 
          if (result == std::nullopt) { throw exception::KeyNotFound(); }
          return *result;
       }
+      /// @brief Insert the given value into the tree.
+      ///
+      /// See AVLTreeBase::add_node.
+      ///
       SharedNode insert(const Value &value) {
          return this->add_node(value);
       }
+      /// @brief Remove a node with the given key from the tree.
+      ///
+      /// See AVLTreeBase::remove_node.
+      ///
+      /// @param key The key to remove from the tree.
+      /// @throws exception::KeyNotFound Thrown if the key isn't found in the tree.
+      ///
       void remove(const Key &key) {
          if (this->_root == nullptr) { return; }
          
@@ -970,12 +1353,21 @@ namespace exception {
          
          this->remove_node(last_node.first->value());
       }
+      /// @brief Convert this tree into a vector.
+      ///
+      /// Performs a post-order traversal on the tree and gets const values from the nodes.
+      ///
+      /// @returns A vector of values in the tree.
       std::vector<Value> to_vec() const {
          return std::vector<Value>(this->cbegin(), this->cend());
       }
+      /// @brief Return the number of elements in this tree.
+      ///
       inline std::size_t size() const {
          return this->_size;
       }
+      /// @brief Destroy this tree.
+      ///
       void destroy() {
          if (this->_root == nullptr) { return; }
          std::vector<SharedNode> visiting = { this->_root };
@@ -995,6 +1387,12 @@ namespace exception {
 
          this->_root.reset();
       }
+      /// @brief Copy the given tree into this tree.
+      ///
+      /// This will destroy the current tree if it exists.
+      ///
+      /// @param other The other tree to copy.
+      ///
       void copy(const AVLTreeBase &other) {
          if (this->_root != nullptr)
             this->destroy();
@@ -1036,11 +1434,24 @@ namespace exception {
       }
    };
 
+   /// @brief A functor for AVLTreeBase which treats the value argument as the key.
+   /// @tparam Value The class of the value type.
+   ///
    template <typename Value>
    struct KeyIsValue {
       const Value &operator() (const Value &value) const { return value; }
    };
 
+   /// @brief A simplified AVLTree interface.
+   ///
+   /// Note that values in this tree cannot be modified, because they are keys, which
+   /// are expected to be const within the tree. If you need to modify a value with a
+   /// given key, you might be looking for a map, in which case you can use AVLMap.
+   ///
+   /// @tparam Key The class of the key of this tree.
+   /// @tparam KeyCompare The comparison functor for the given key type. Defaults to std::less<Key>.
+   /// See AVLTreeBase for Compare functor requirements.
+   ///
    template <typename Key, typename KeyCompare=std::less<Key>>
    class AVLTree : public AVLTreeBase<Key, Key, KeyIsValue<Key>, KeyCompare>
    {
@@ -1051,17 +1462,44 @@ namespace exception {
       AVLTree(std::vector<Key> &nodes) : AVLTreeBase(nodes) {}
       AVLTree(const AVLTree &other) : AVLTreeBase(other) {}
 
+      /// @brief Return an iterator of values at the beginning of this tree.
+      ///
+      /// This performs a post-order traversal on the tree. See AVLTreeBase::const_iterator.
+      ///
       iterator begin() const { return iterator(this->root()); }
+      /// @brief Return an iterator of values at the end of this tree.
+      ///
       iterator end() const { return iterator(nullptr); }
+      /// @brief Return a const iterator of values at the beginning of this tree.
+      ///
+      /// This performs a post-order traversal on the tree. See AVLTreeBase::const_iterator.
+      ///
       iterator cbegin() const { return this->begin(); }
+      /// @brief Return an iterator of values at the end of this tree.
+      ///
       iterator cend() const { return this->end(); }
    };
 
+   /// @brief A functor which treats the first value of a std::pair as its key.
+   ///
+   /// @tparam Key The class of the key type.
+   /// @tparam Value The class of the value type.
+   ///
    template<typename Key, typename Value>
    struct KeyOfPair {
       const Key &operator() (const std::pair<const Key, Value> &pair) const { return pair.first; }
    };
 
+   /// @brief A mapping implementation based on an AVL tree.
+   ///
+   /// This is not intended to be a replacement for std::map, but rather simply act as a map-like interface
+   /// to an AVL tree for further use.
+   ///
+   /// @tparam Key The type of the key for the mapping.
+   /// @tparam Value The type of the value for the mapping.
+   /// @tparam KeyCompare The key comparison functor for sorting the nodes. See AVLTreeBase for Comparison
+   /// requirements.
+   ///
    template <typename Key, typename Value, typename KeyCompare=std::less<Key>>
    class AVLMap : public AVLTreeBase<Key, std::pair<const Key, Value>, KeyOfPair<Key, Value>, KeyCompare>
    {
@@ -1070,6 +1508,14 @@ namespace exception {
       AVLMap(std::vector<typename AVLTreeBase::ValueType> &nodes) : AVLTreeBase(nodes) {}
       AVLMap(const AVLMap &other) : AVLTreeBase(other) {}
 
+      /// @brief Access the given mapping value with the given key.
+      ///
+      /// **NOTE**: This will create a new node if the key does not exist. To not do this,
+      /// you can use AVLTreeBase::get or use the const equivalent of this operator.
+      ///
+      /// @param key The key value to search for.
+      /// @returns The value associated with the given key.
+      ///
       Value &operator[](const Key &key) {
          try {
             return this->get(key);
@@ -1079,20 +1525,46 @@ namespace exception {
             return node->value().second;
          }
       }
+      /// @brief Access the given const mapping value with the given key.
+      /// @param key The key value to search for.
+      /// @returns The value associated with the given key.
+      /// @throws exception::KeyNotFound Thrown when the key was not found in the tree.
+      ///
       const Value &operator[](const Key &key) const { return this->get(key); }
-      
+
+      /// @brief Check if the given key exists in the tree.
+      ///
+      /// See AVLTreeBase::contains.
+      ///
+      /// @param key The key to search for.
+      /// @returns True if found, false otherwise.
+      ///
       bool has_key(const Key &key) const {
          return this->contains(key);
       }
 
+      /// @brief Insert a given key-value pair into the tree.
+      /// @param key The key to associate with the new node.
+      /// @param value The value to give the new node.
+      ///
       void insert(const Key &key, const Value &value) {
          AVLTreeBase::insert(std::make_pair(key, value));
       }
 
+      /// @brief Get the value associated with the given key.
+      /// @param key The key to get.
+      /// @returns The value associated with the given key.
+      /// @throws exception::KeyNotFound Thrown if the given key isn't found.
+      ///
       Value &get(const Key &key) {
          return AVLTreeBase::get(key)->value().second;
       }
 
+      /// @brief Get the const value associated with the given key.
+      /// @param key The key to get.
+      /// @returns The value associated with the given key.
+      /// @throws exception::KeyNotFound Thrown if the given key isn't found.
+      ///
       const Value &get(const Key &key) const {
          return AVLTreeBase::get(key)->value().second;
       }
